@@ -19,7 +19,7 @@ Kills: {{.GetKills}} Deaths: {{.GetDeaths}} KDR: {{.KDR}}
 `
 
 type Global struct {
-	census.Character
+	*census.Character
 	Dev bool
 }
 
