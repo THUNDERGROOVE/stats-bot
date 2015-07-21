@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/THUNDERGROOVE/census"
 	"github.com/nlopes/slack"
 	"log"
 	"strings"
@@ -14,8 +15,13 @@ var Commands = make(map[string]*Cmd)
 const lookup = `({{.Faction.Name.En}}) {{if .Outfit.Alias }}[{{.Outfit.Alias}}]{{end}} {{.Name.First}}
 Kills: {{.GetKills}} Deaths: {{.GetDeaths}} KDR: {{.KDR}}
 {{if .Outfit.Name}} Outfit: {{.Outfit.Name}} with {{.Outfit.MemberCount}} members {{end}}
-Cached: {{.IsCached}}
+{{if .Dev}} Cached: {{.IsCached}}{{end}}
 `
+
+type Global struct {
+	census.Character
+	Dev bool
+}
 
 var lookupTmpl *template.Template
 
@@ -49,7 +55,7 @@ func init() {
 			return
 		}
 		buff := bytes.NewBuffer([]byte(""))
-		if err := lookupTmpl.Execute(buff, char); err != nil {
+		if err := lookupTmpl.Execute(buff, Global{Character: char, Dev: Dev}); err != nil {
 			buff.WriteString("\nerror encountered" + err.Error())
 		}
 		Respond(buff.String(), out, ev)
@@ -74,7 +80,7 @@ func Dispatch(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.Messag
 	}
 	c := strings.ToLower(strings.Split(ev.Text, " ")[0])
 	if v, ok := Commands[c]; ok {
-		log.Printf("[Dispatch] Sending to %v", v.name)
+		//log.Printf("[Dispatch] Sending to %v", v.name)
 		v.handler(bot, out, ev)
 	} else {
 		//@TODO: Handle undhandled commandd

@@ -14,6 +14,7 @@ import (
 const Token = "xoxb-7964763830-ZppbrJ6Mr1zfb8KTJwbnI0iQ"
 
 var Census *census.Census
+var Dev bool
 
 func getExternalIP() string {
 	return "24.22.151.219"
@@ -34,6 +35,10 @@ func main() {
 			log.Printf("Recovered from panic! [%v]", r)
 		}
 	}()*/
+	if _, err := os.Stat(".git"); err == nil {
+		log.Println("Git data found.  Running in development mode")
+		Dev = true
+	}
 	log.Printf("Setting up slack bot")
 	bot := slack.New(Token)
 
