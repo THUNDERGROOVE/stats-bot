@@ -15,10 +15,11 @@ import (
 const Token = "xoxb-7964763830-ZppbrJ6Mr1zfb8KTJwbnI0iQ"
 
 var Census *census.Census
+var CensusEU *census.Census
 var Dev bool
 
 func getExternalIP() string {
-	return "24.22.151.219"
+	return "0.0.0.0"
 	resp, err := http.Get("http://myexternalip.com/raw")
 	if err != nil {
 		log.Printf("Error getting external IP [%v]", err.Error())
@@ -45,6 +46,7 @@ func main() {
 
 	log.Printf("Setting up census client")
 	Census = census.NewCensus("s:maximumtwang", "ps2ps4us:v2")
+	CensusEU = census.NewCensus("s:maximumtwang", "ps2ps4eu:v2")
 
 	//bot.SetDebug(true)
 
@@ -55,6 +57,7 @@ func main() {
 	}
 
 	log.Printf("Auth: %v on team %v", t.User, t.Team)
+
 	ip := getExternalIP()
 	log.Printf("Starting RTM @[%v]", ip)
 	api, err := bot.StartRTM("", fmt.Sprintf("http://%v:8080/", ip))
@@ -76,8 +79,12 @@ func main() {
 		case msg := <-receiver:
 			switch m := msg.Data.(type) {
 			case *slack.MessageEvent:
-				//log.Printf("Got message: %v -> %v", getUsername(bot, m.UserId), m.Text)
+				log.Printf("Got message: %v -> %v ", getUsername(bot, m.UserId), m.Text)
+
+				//if bot.GetInfo().GetChannelById(m.ChannelId) != nil && !bot.GetInfo().GetChannelById(m.ChannelId).IsChannel {
 				Dispatch(bot, sender, m)
+				//case *slack.event
+				//}
 			}
 		}
 	}
