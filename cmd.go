@@ -11,10 +11,15 @@ import (
 
 var Commands = make(map[string]*Cmd)
 
-const lookup = `({{.Faction.Name.En}}) {{if .Outfit.Alias }}[{{.Outfit.Alias}}]{{end}} {{.Name.First}} BR: {{.Battlerank.Rank}} :cert: {{.GetCerts}}
-Kills: {{.GetKills}} Deaths: {{.GetDeaths}} KDR: {{.KDR}}
-{{if .Outfit.Name}} Outfit: {{.Outfit.Name}} with {{.Outfit.MemberCount}} members {{end}}
-Defended: {{.GetFacilitiesDefended}} Captured: {{.GetFacilitiesCaptured}}
+const lookup = `
+{{if .Character}}
+({{.Faction.Name.En}}) {{if .Outfit.Alias }}[{{.Outfit.Alias}}]{{end}} {{.Name.First}} BR: {{.Battlerank.Rank}} :cert: {{.GetCerts}}\
+Kills: {{.GetKills}} Deaths: {{.GetDeaths}} KDR: {{.KDR}}\
+{{if .Outfit.Name}} Outfit: {{.Outfit.Name}} with {{.Outfit.MemberCount}} members {{end}}\
+Defended: {{.GetFacilitiesDefended}} Captured: {{.GetFacilitiesCaptured}}\
+{{else}}
+Uh got nil character?
+{{}}
 `
 
 const helpText = `Hi.  I'm stats-bot.  You can ask me to '!lookup <name>' or '!lookupeu <name>'`
@@ -111,7 +116,7 @@ func Dispatch(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.Messag
 }
 
 func Respond(s string, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
-	lines := strings.Split(s, "\n")
+	lines := strings.Split(s, "\")
 	for _, v := range lines {
 		o := slack.OutgoingMessage{}
 		o.Text = v
