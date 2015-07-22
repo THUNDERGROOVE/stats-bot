@@ -11,7 +11,7 @@ import (
 
 var Commands = make(map[string]*Cmd)
 
-const lookup = `({{.Faction.Name.En}}) {{if .Outfit.Alias }}[{{.Outfit.Alias}}]{{end}} {{.Name.First}}
+const lookup = `({{.Faction.Name.En}}) {{if .Outfit.Alias }}[{{.Outfit.Alias}}]{{end}} {{.Name.First}} BR: {{.Battlerank.Rank}} :cert: {{.GetCerts}}
 Kills: {{.GetKills}} Deaths: {{.GetDeaths}} KDR: {{.KDR}}
 {{if .Outfit.Name}} Outfit: {{.Outfit.Name}} with {{.Outfit.MemberCount}} members {{end}}
 Defended: {{.GetFacilitiesDefended}} Captured: {{.GetFacilitiesCaptured}}
@@ -38,7 +38,7 @@ func init() {
 	})
 
 	RegisterCommand("lookup", func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
-		LookupWith(Census, CensusEU,bot, out, ev)
+		LookupWith(Census, CensusEU, bot, out, ev)
 	})
 	RegisterCommand("lookupeu", func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
 		LookupWith(CensusEU, Census, bot, out, ev)
@@ -125,4 +125,9 @@ func parseURL(url string) string {
 	url = strings.Split(url, "//")[1]
 	url = strings.Split(url, ".slack.com/")[0]
 	return url
+}
+
+func TKPercent(char *census.Character) float64 {
+	kills := char.TeamKillsInLast(150)
+	return (float64(kills) / 1000) * 100
 }
