@@ -14,8 +14,8 @@ var Commands = make(map[string]*Cmd)
 const lookup = `
 {{if .Character}}
 ({{.Faction.Name.En}}) {{if .Outfit.Alias }}[{{.Outfit.Alias}}]{{end}} {{.Name.First}}@{{.ServerName}} BR: {{.Battlerank.Rank}} :cert: {{.GetCerts}}\
-Kills: {{.GetKills}} Deaths: {{.GetDeaths}} KDR: {{.KDR}}\
-{{if .Outfit.Name}} Outfit: {{.Outfit.Name}} with {{.Outfit.MemberCount}} members {{end}}\
+Kills: {{.GetKills}} Deaths: {{.GetDeaths}} KDR: {{.KDR}} TK: %{{.TKPercent}}\
+{{if .Outfit.Name}} Outfit: {{.Outfit.Name}} with {{.Outfit.MemberCount}} members \{{end}}
 Defended: {{.GetFacilitiesDefended}} Captured: {{.GetFacilitiesCaptured}}
 {{else}}
 Uh got nil character?
