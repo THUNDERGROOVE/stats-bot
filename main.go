@@ -19,6 +19,7 @@ var Dev bool
 func getExternalIP() string {
 	return "0.0.0.0"
 	resp, err := http.Get("http://myexternalip.com/raw")
+
 	if err != nil {
 		log.Printf("Error getting external IP [%v]", err.Error())
 	}
@@ -27,7 +28,6 @@ func getExternalIP() string {
 	o = strings.Replace(o, "\n", "", -1)
 	return o
 }
-
 func main() {
 	log.SetFlags(log.Lshortfile)
 	/*defer func() {
@@ -44,6 +44,7 @@ func main() {
 
 	log.Printf("Setting up census client")
 	Census = census.NewCensus("s:maximumtwang", "ps2ps4us:v2")
+
 	CensusEU = census.NewCensus("s:maximumtwang", "ps2ps4eu:v2")
 
 	//bot.SetDebug(true)
@@ -79,10 +80,7 @@ func main() {
 			case *slack.MessageEvent:
 				log.Printf("Got message: %v -> %v ", getUsername(bot, m.UserId), m.Text)
 
-				//if bot.GetInfo().GetChannelById(m.ChannelId) != nil && !bot.GetInfo().GetChannelById(m.ChannelId).IsChannel {
 				Dispatch(bot, sender, m)
-				//case *slack.event
-				//}
 			}
 		}
 	}

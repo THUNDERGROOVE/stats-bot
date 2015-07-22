@@ -91,7 +91,7 @@ func init() {
 	*/
 }
 
-func LookupWith(c *census.Census, bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
+func LookupWith(c *census.Census, fallbackc *census.Census, bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
 	args := strings.Split(ev.Text, " ")
 	if len(args) <= 1 {
 		Respond("Do you really expect me to lookup nothing?", out, ev)
