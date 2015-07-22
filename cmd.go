@@ -39,10 +39,10 @@ func init() {
 	})
 
 	RegisterCommand("lookup", func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
-		LookupWith(Census, bot, out, ev)
+		LookupWith(Census, CensusEU,bot, out, ev)
 	})
 	RegisterCommand("lookupeu", func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
-		LookupWith(CensusEU, bot, out, ev)
+		LookupWith(CensusEU,Census, bot, out, ev)
 	})
 	/*
 		RegisterCommand("invite", func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
