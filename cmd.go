@@ -116,7 +116,7 @@ func Dispatch(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.Messag
 }
 
 func Respond(s string, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
-	lines := strings.Split(s, "\")
+	lines := strings.Split(s, "\\")
 	for _, v := range lines {
 		o := slack.OutgoingMessage{}
 		o.Text = v
