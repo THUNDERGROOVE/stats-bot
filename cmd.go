@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/THUNDERGROOVE/census"
 	"github.com/nlopes/slack"
 	"log"
@@ -15,7 +14,7 @@ var Commands = make(map[string]*Cmd)
 const lookup = `({{.Faction.Name.En}}) {{if .Outfit.Alias }}[{{.Outfit.Alias}}]{{end}} {{.Name.First}}
 Kills: {{.GetKills}} Deaths: {{.GetDeaths}} KDR: {{.KDR}}
 {{if .Outfit.Name}} Outfit: {{.Outfit.Name}} with {{.Outfit.MemberCount}} members {{end}}
-{{if .Dev}} Cached: {{.IsCached}}{{end}}
+Defended: {{.GetFacilitiesDefended}} Captured: {{.GetFacilitiesCaptured}}
 `
 
 const helpText = `Hi.  I'm stats-bot.  You can ask me to '!lookup <name>' or '!lookupeu <name>'`
@@ -42,53 +41,8 @@ func init() {
 		LookupWith(Census, CensusEU,bot, out, ev)
 	})
 	RegisterCommand("lookupeu", func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
-		LookupWith(CensusEU,Census, bot, out, ev)
+		LookupWith(CensusEU, Census, bot, out, ev)
 	})
-	/*
-		RegisterCommand("invite", func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
-			log.Printf("invite triggered")
-			args := strings.Split(ev.Text, " ")
-			if len(args) <= 4 {
-				Respond("usage: invite <email> <firstName> <lastName> <channel>", out, ev)
-				return
-			}
-
-			email := args[1]
-
-			if strings.Contains(email, "|") {
-				email = strings.Split(email, "|")[1]
-				email = strings.Replace(email, ">", "", -1)
-			}
-
-			firstName := args[2]
-			lastName := args[3]
-			channel := args[4]
-			var cid string
-			t, _ := bot.AuthTest()
-			log.Printf("Checking channels")
-			for _, v := range bot.GetInfo().Channels {
-				if v.Name == channel {
-					cid = v.Id
-				} else {
-					log.Printf("Channel wasn't '%v': [%v]", channel, v.Name)
-				}
-			}
-
-			if cid == "" {
-				Respond("Channel wasn't resolved", out, ev)
-				return
-			}
-
-			log.Printf("inviting user")
-			if err := bot.InviteUser(parseURL(t.Url), cid, firstName, lastName, email); err != nil {
-				log.Printf("Error: %v", err.Error())
-				Respond("Error: "+err.Error(), out, ev)
-				return
-			}
-
-			Respond("User successfully invited", out, ev)
-		})
-	*/
 }
 
 func LookupWith(c *census.Census, fallbackc *census.Census, bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
@@ -104,10 +58,15 @@ func LookupWith(c *census.Census, fallbackc *census.Census, bot *slack.Slack, ou
 			Respond("ERROR: The server closed the connection on us.  The API is either down or we are being rate-limited", out, ev)
 			return
 		}
-		log.Printf("Error getting character info: [%v]", err.Error())
-		Respond(fmt.Sprintf("Error: %v",
-			err.Error()), out, ev)
-		return
+		log.Printf("Error getting character info: [%v] trying fallback", err.Error())
+
+		char, err = fallbackc.QueryCharacterByExactName(name)
+		if err != nil {
+			if strings.Contains(err.Error(), "Get") {
+				Respond("ERROR: The server closed the connection on us.  The API is either down or we are being rate-limited", out, ev)
+				return
+			}
+		}
 	}
 	buff := bytes.NewBuffer([]byte(""))
 	if err := lookupTmpl.Execute(buff, Global{Character: char, Dev: Dev}); err != nil {
@@ -133,6 +92,10 @@ func Dispatch(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.Messag
 		return
 	}
 	c := strings.ToLower(strings.Split(ev.Text, " ")[0])
+	if len(ev.Text) == 0 {
+		log.Printf("Got blank message")
+		return
+	}
 	if ev.Text[0] == '!' {
 
 		if v, ok := Commands[strings.TrimLeft(c, "!")]; ok {
