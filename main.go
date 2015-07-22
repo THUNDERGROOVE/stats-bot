@@ -12,8 +12,6 @@ import (
 	"time"
 )
 
-const Token = "xoxb-7964763830-ZppbrJ6Mr1zfb8KTJwbnI0iQ"
-
 var Census *census.Census
 var CensusEU *census.Census
 var Dev bool
@@ -42,7 +40,7 @@ func main() {
 		Dev = true
 	}
 	log.Printf("Setting up slack bot")
-	bot := slack.New(Token)
+	bot := slack.New(Config.Token)
 
 	log.Printf("Setting up census client")
 	Census = census.NewCensus("s:maximumtwang", "ps2ps4us:v2")
