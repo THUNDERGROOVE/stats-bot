@@ -19,7 +19,7 @@ Kills: {{.GetKills}} Deaths: {{.GetDeaths}} KDR: {{.KDR}}\
 Defended: {{.GetFacilitiesDefended}} Captured: {{.GetFacilitiesCaptured}}\
 {{else}}
 Uh got nil character?
-{{}}
+{{end}}
 `
 
 const helpText = `Hi.  I'm stats-bot.  You can ask me to '!lookup <name>' or '!lookupeu <name>'`
@@ -32,6 +32,7 @@ type Global struct {
 var lookupTmpl *template.Template
 
 func init() {
+
 	var err error
 	lookupTmpl = template.New("")
 	lookupTmpl, err = lookupTmpl.Parse(lookup)
