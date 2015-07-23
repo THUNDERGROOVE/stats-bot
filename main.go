@@ -35,6 +35,7 @@ func main() {
 			log.Printf("Recovered from panic! [%v]", r)
 		}
 	}()*/
+
 	if _, err := os.Stat(".git"); err == nil {
 		log.Println("Git data found.  Running in development mode")
 		Dev = true
@@ -78,7 +79,7 @@ func main() {
 		case msg := <-receiver:
 			switch m := msg.Data.(type) {
 			case *slack.MessageEvent:
-				log.Printf("Got message: %v -> %v ", getUsername(bot, m.UserId), m.Text)
+				//log.Printf("Got message: %v -> %v ", getUsername(bot, m.UserId), m.Text)
 
 				Dispatch(bot, sender, m)
 			}

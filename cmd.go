@@ -16,7 +16,8 @@ const lookup = `
 ({{.Faction.Name.En}}) {{if .Outfit.Alias }}[{{.Outfit.Alias}}]{{end}} {{.Name.First}}@{{.ServerName}} BR: {{.Battlerank.Rank}} :cert: {{.GetCerts}}\
 Kills: {{.GetKills}} Deaths: {{.GetDeaths}} KDR: {{.KDRS}} TK: %{{.TKPercent}}\
 {{if .Outfit.Name}} Outfit: {{.Outfit.Name}} with {{.Outfit.MemberCount}} members \{{end}}
-Defended: {{.GetFacilitiesDefended}} Captured: {{.GetFacilitiesCaptured}}
+Defended: {{.GetFacilitiesDefended}} Captured: {{.GetFacilitiesCaptured}}\
+Get more stats @ ps4{{if .Parent.IsEU}}eu{{else}}us{{end}}.ps2.fisu.pw/player/?name={{.Name.Lower}}
 {{else}}
 Uh got nil character?
 {{end}}
@@ -94,6 +95,14 @@ func RegisterCommand(name string, handler func(*slack.Slack, chan slack.Outgoing
 }
 
 func Dispatch(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Recovered from panic in dispatch")
+		}
+	}()
+
+	
+	
 	if bot.GetInfo().User.Id == ev.UserId {
 		return
 	}
