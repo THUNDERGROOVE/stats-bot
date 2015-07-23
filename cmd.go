@@ -17,7 +17,7 @@ const lookup = `
 Kills: {{.GetKills}} Deaths: {{.GetDeaths}} KDR: {{.KDRS}} TK: %{{.TKPercent}}\
 {{if .Outfit.Name}} Outfit: {{.Outfit.Name}} with {{.Outfit.MemberCount}} members \{{end}}
 Defended: {{.GetFacilitiesDefended}} Captured: {{.GetFacilitiesCaptured}}\
-Get more stats @ ps4{{if .Parent.IsEU}}eu{{else}}us{{end}}.ps2.fisu.pw/player/?name={{.Name.Lower}}
+Get more stats @ ps4{{if .Parent.IsEU}}eu{{else}}us{{end}}.ps2.fisu.pw/player/?name={{.Name.First}}
 {{else}}
 Uh got nil character?
 {{end}}
