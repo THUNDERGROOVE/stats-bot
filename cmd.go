@@ -24,12 +24,13 @@ var lookupTmpl *template.Template
 
 func init() {
 
-	var err error
-	lookupTmpl = template.New("")
+	//var err error
+	lookupTmpl = template.Must(template.ParseFiles("lookup_template.tmpl"))
+	/*
 	lookupTmpl, err = lookupTmpl.ParseFiles("lookup_template.tmpl")
 	if err != nil {
 		log.Fatalf("Template failed to compile: [%v]", err.Error())
-	}
+	}*/
 	// !help
 	RegisterCommand("help", func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
 		Respond(helpText, out, ev)
@@ -131,6 +132,7 @@ func Dispatch(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.Messag
 	}
 }
 
+// Respond is a helper function to send text responses to the slack server.
 func Respond(s string, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
 	lines := strings.Split(s, "\\")
 	for _, v := range lines {
@@ -148,6 +150,7 @@ func parseURL(url string) string {
 	return url
 }
 
+// No longer used?
 func TKPercent(char *census.Character) float64 {
 	kills := char.TeamKillsInLast(150)
 	return (float64(kills) / 1000) * 100
