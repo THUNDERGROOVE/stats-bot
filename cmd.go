@@ -7,6 +7,7 @@ import (
 	"log"
 	"strings"
 	"text/template"
+	"fmt"
 )
 
 var Commands = make(map[string]*Cmd)
@@ -64,6 +65,8 @@ func LookupWith(c *census.Census, fallbackc *census.Census, bot *slack.Slack, ou
 		if strings.Contains(err.Error(), "Get") {
 			Respond("ERROR: The server closed the connection on us.  The API is either down or we are being rate-limited", out, ev)
 			return
+		} else if err != nil {
+			Respond(fmt.Sprintf("Couldn't find the character '%v'", name), out, ev)
 		}
 		log.Printf("Error getting character info: [%v] trying fallback", err.Error())
 
@@ -72,8 +75,16 @@ func LookupWith(c *census.Census, fallbackc *census.Census, bot *slack.Slack, ou
 			if strings.Contains(err.Error(), "Get") {
 				Respond("ERROR: The server closed the connection on us.  The API is either down or we are being rate-limited", out, ev)
 				return
+			} else if err != nil {
+				Respond(fmt.Sprintf("Couldn't find the character '%v'", name), out, ev)
+				return
 			}
 		}
+	}
+	if char == nil {
+		log.Printf("Query didn't return any error but character was nil")
+		Respond("Query didn't return any error but character was nil", out, ev)
+		return
 	}
 	buff := bytes.NewBuffer([]byte(""))
 	if err := lookupTmpl.Execute(buff, Global{Character: char, Dev: Dev}); err != nil {
@@ -101,8 +112,6 @@ func Dispatch(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.Messag
 		}
 	}()
 
-	
-	
 	if bot.GetInfo().User.Id == ev.UserId {
 		return
 	}
