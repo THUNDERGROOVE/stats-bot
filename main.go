@@ -16,6 +16,7 @@ var Census *census.Census
 var CensusEU *census.Census
 var Dev bool
 
+// Turns out we don't actually need this?
 func getExternalIP() string {
 	return "0.0.0.0"
 	resp, err := http.Get("http://myexternalip.com/raw")
@@ -30,16 +31,21 @@ func getExternalIP() string {
 }
 func main() {
 	log.SetFlags(log.Lshortfile)
-	/*defer func() {
+	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("Recovered from panic! [%v]", r)
+			log.Printf("Restarting bot")
+			StartBot()
 		}
-	}()*/
+	}()
 
 	if _, err := os.Stat(".git"); err == nil {
 		log.Println("Git data found.  Running in development mode")
 		Dev = true
 	}
+}
+
+func StartBot() {
 	log.Printf("Setting up slack bot")
 	bot := slack.New(Config.Token)
 
@@ -47,8 +53,6 @@ func main() {
 	Census = census.NewCensus("s:maximumtwang", "ps2ps4us:v2")
 
 	CensusEU = census.NewCensus("s:maximumtwang", "ps2ps4eu:v2")
-
-	//bot.SetDebug(true)
 
 	t, err := bot.AuthTest()
 
@@ -85,6 +89,7 @@ func main() {
 			}
 		}
 	}
+
 }
 
 func sendMessages(api *slack.SlackWS, sender chan slack.OutgoingMessage) {

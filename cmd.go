@@ -12,20 +12,9 @@ import (
 
 var Commands = make(map[string]*Cmd)
 
-const lookup = `
-{{if .Character}}
-({{.Faction.Name.En}}) {{if .Outfit.Alias }}[{{.Outfit.Alias}}]{{end}} {{.Name.First}}@{{.ServerName}} BR: {{.Battlerank.Rank}} :cert: {{.GetCerts}}\
-Kills: {{.GetKills}} Deaths: {{.GetDeaths}} KDR: {{.KDRS}} TK: %{{.TKPercent}}\
-{{if .Outfit.Name}} Outfit: {{.Outfit.Name}} with {{.Outfit.MemberCount}} members \{{end}}
-Defended: {{.GetFacilitiesDefended}} Captured: {{.GetFacilitiesCaptured}}\
-Get more stats @ ps4{{if .Parent.IsEU}}eu{{else}}us{{end}}.ps2.fisu.pw/player/?name={{.Name.First}}
-{{else}}
-Uh got nil character?
-{{end}}
-`
-
 const helpText = `Hi.  I'm stats-bot.  You can ask me to '!lookup <name>' or '!lookupeu <name>'`
 
+// Global is the struct given to any template parsed for responses
 type Global struct {
 	*census.Character
 	Dev bool
@@ -37,22 +26,27 @@ func init() {
 
 	var err error
 	lookupTmpl = template.New("")
-	lookupTmpl, err = lookupTmpl.Parse(lookup)
+	lookupTmpl, err = lookupTmpl.ParseFiles("lookup_template.tmpl")
 	if err != nil {
 		log.Fatalf("Template failed to compile: [%v]", err.Error())
 	}
+	// !help
 	RegisterCommand("help", func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
 		Respond(helpText, out, ev)
 	})
-
+	
+	// !lookup
 	RegisterCommand("lookup", func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
 		LookupWith(Census, CensusEU, bot, out, ev)
 	})
+
+	// !lookupeu
 	RegisterCommand("lookupeu", func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
 		LookupWith(CensusEU, Census, bot, out, ev)
 	})
 }
 
+// LookupWith looks for a character given a several paramaters
 func LookupWith(c *census.Census, fallbackc *census.Census, bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
 	args := strings.Split(ev.Text, " ")
 	if len(args) <= 1 {
@@ -93,12 +87,13 @@ func LookupWith(c *census.Census, fallbackc *census.Census, bot *slack.Slack, ou
 	}
 	Respond(buff.String(), out, ev)
 }
-
+// Cmd is a command handler struct
 type Cmd struct {
 	name    string
 	handler func(*slack.Slack, chan slack.OutgoingMessage, *slack.MessageEvent)
 }
 
+// RegisterCommand registers a command for the bot to dispatch
 func RegisterCommand(name string, handler func(*slack.Slack, chan slack.OutgoingMessage, *slack.MessageEvent)) {
 	cmd := new(Cmd)
 	cmd.name = name
@@ -106,6 +101,7 @@ func RegisterCommand(name string, handler func(*slack.Slack, chan slack.Outgoing
 	Commands[name] = cmd
 }
 
+// Dispatch sends a message to the bot
 func Dispatch(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
 	defer func() {
 		if r := recover(); r != nil {
