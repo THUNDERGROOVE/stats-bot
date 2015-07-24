@@ -43,6 +43,7 @@ func main() {
 		log.Println("Git data found.  Running in development mode")
 		Dev = true
 	}
+	StartBot()
 }
 
 func StartBot() {
