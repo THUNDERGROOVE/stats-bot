@@ -67,6 +67,7 @@ func LookupWith(c *census.Census, fallbackc *census.Census, bot *slack.Slack, ou
 			return
 		} else if err != nil {
 			Respond(fmt.Sprintf("Couldn't find the character '%v'", name), out, ev)
+			return
 		}
 		log.Printf("Error getting character info: [%v] trying fallback", err.Error())
 
