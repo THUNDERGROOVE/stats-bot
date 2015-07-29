@@ -4,11 +4,8 @@ import (
 	"fmt"
 	"github.com/THUNDERGROOVE/census"
 	"github.com/nlopes/slack"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -16,19 +13,6 @@ var Census *census.Census
 var CensusEU *census.Census
 var Dev bool
 
-// Turns out we don't actually need this?
-func getExternalIP() string {
-	return "0.0.0.0"
-	resp, err := http.Get("http://myexternalip.com/raw")
-
-	if err != nil {
-		log.Printf("Error getting external IP [%v]", err.Error())
-	}
-	data, _ := ioutil.ReadAll(resp.Body)
-	o := string(data)
-	o = strings.Replace(o, "\n", "", -1)
-	return o
-}
 func main() {
 	log.SetFlags(log.Lshortfile)
 	defer func() {
@@ -55,6 +39,8 @@ func StartBot() {
 
 	CensusEU = census.NewCensus("s:maximumtwang", "ps2ps4eu:v2")
 
+	StartPopGathering()
+
 	t, err := bot.AuthTest()
 
 	if err != nil {
@@ -63,9 +49,8 @@ func StartBot() {
 
 	log.Printf("Auth: %v on team %v", t.User, t.Team)
 
-	ip := getExternalIP()
-	log.Printf("Starting RTM @[%v]", ip)
-	api, err := bot.StartRTM("", fmt.Sprintf("http://%v:8080/", ip))
+	log.Printf("Starting slack events websocket\n")
+	api, err := bot.StartRTM("", fmt.Sprintf("http://%v:8080/", "http://localhost/"))
 
 	if err != nil {
 		log.Printf("Error setting up RTM [%v]", err.Error())

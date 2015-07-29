@@ -2,12 +2,12 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/THUNDERGROOVE/census"
 	"github.com/nlopes/slack"
 	"log"
 	"strings"
 	"text/template"
-	"fmt"
 )
 
 var Commands = make(map[string]*Cmd)
@@ -27,24 +27,38 @@ func init() {
 	//var err error
 	lookupTmpl = template.Must(template.ParseFiles("lookup_template.tmpl"))
 	/*
-	lookupTmpl, err = lookupTmpl.ParseFiles("lookup_template.tmpl")
-	if err != nil {
-		log.Fatalf("Template failed to compile: [%v]", err.Error())
-	}*/
+		lookupTmpl, err = lookupTmpl.ParseFiles("lookup_template.tmpl")
+		if err != nil {
+			log.Fatalf("Template failed to compile: [%v]", err.Error())
+		}*/
 	// !help
-	RegisterCommand("help", func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
-		Respond(helpText, out, ev)
-	})
-	
+	RegisterCommand("help",
+		func(bot *slack.Slack,
+			out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
+			Respond(helpText, out, ev)
+		})
+
 	// !lookup
-	RegisterCommand("lookup", func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
-		LookupWith(Census, CensusEU, bot, out, ev)
-	})
+	RegisterCommand("lookup",
+		func(bot *slack.Slack,
+			out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
+			LookupWith(Census, CensusEU, bot, out, ev)
+		})
 
 	// !lookupeu
-	RegisterCommand("lookupeu", func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
-		LookupWith(CensusEU, Census, bot, out, ev)
-	})
+	RegisterCommand("lookupeu",
+		func(bot *slack.Slack,
+			out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
+			LookupWith(CensusEU, Census, bot, out, ev)
+		})
+	RegisterCommand("pop",
+		func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
+			args := strings.Split(ev.Text, " ")
+			if len(args) <= 1 {
+				Respond("pop requires an argument you dingus", out, ev)
+			}
+			Respond(PopResp(USPop, args[1]), out, ev)
+		})
 }
 
 // LookupWith looks for a character given a several paramaters
@@ -55,7 +69,7 @@ func LookupWith(c *census.Census, fallbackc *census.Census, bot *slack.Slack, ou
 		return
 	}
 	name := args[1]
-	char, err := c.QueryCharacterByExactName(name)
+	char, err := c.GetCharacterByName(name)
 	if err != nil {
 		if strings.Contains(err.Error(), "Get") {
 			Respond("ERROR: The server closed the connection on us.  The API is either down or we are being rate-limited", out, ev)
@@ -66,7 +80,7 @@ func LookupWith(c *census.Census, fallbackc *census.Census, bot *slack.Slack, ou
 		}
 		log.Printf("Error getting character info: [%v] trying fallback", err.Error())
 
-		char, err = fallbackc.QueryCharacterByExactName(name)
+		char, err = fallbackc.GetCharacterByName(name)
 		if err != nil {
 			if strings.Contains(err.Error(), "Get") {
 				Respond("ERROR: The server closed the connection on us.  The API is either down or we are being rate-limited", out, ev)
@@ -88,6 +102,7 @@ func LookupWith(c *census.Census, fallbackc *census.Census, bot *slack.Slack, ou
 	}
 	Respond(buff.String(), out, ev)
 }
+
 // Cmd is a command handler struct
 type Cmd struct {
 	name    string
@@ -134,14 +149,14 @@ func Dispatch(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.Messag
 
 // Respond is a helper function to send text responses to the slack server.
 func Respond(s string, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
-	lines := strings.Split(s, "\\")
-	for _, v := range lines {
-		o := slack.OutgoingMessage{}
-		o.Text = v
-		o.ChannelId = ev.ChannelId
-		o.Type = ev.Type
-		out <- o
-	}
+	//lines := strings.Split(s, "\\")
+	text := strings.Replace(s, "\\", "\n", -1)
+	o := slack.OutgoingMessage{}
+	o.Text = text
+	o.ChannelId = ev.ChannelId
+	o.Type = ev.Type
+	out <- o
+
 }
 
 func parseURL(url string) string {
