@@ -12,7 +12,12 @@ import (
 
 var Commands = make(map[string]*Cmd)
 
-const helpText = `Hi.  I'm stats-bot.  You can ask me to '!lookup <name>' or '!lookupeu <name>'`
+const helpText = `Hi.\
+I'm stats-bot.  I have serveral commands!
+!lookup   <name>
+!lookupeu <name>
+!pop      <server>
+!popeu    <server>`
 
 // Global is the struct given to any template parsed for responses
 type Global struct {
@@ -58,6 +63,14 @@ func init() {
 				Respond("pop requires an argument you dingus", out, ev)
 			}
 			Respond(PopResp(USPop, args[1]), out, ev)
+		})
+	RegisterCommand("popeu",
+		func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
+			args := strings.Split(ev.Text, " ")
+			if len(args) <= 1 {
+				Respond("pop requires an argument you dingus", out, ev)
+			}
+			Respond(PopResp(EUPop, args[1]), out, ev)
 		})
 }
 
