@@ -13,10 +13,10 @@ import (
 var Commands = make(map[string]*Cmd)
 
 const helpText = `Hi.\
-I'm stats-bot.  I have serveral commands!
-!lookup   <name>
-!lookupeu <name>
-!pop      <server>
+I'm stats-bot.  I have serveral commands!\
+!lookup   <name>\
+!lookupeu <name>\
+!pop      <server>\
 !popeu    <server>`
 
 // Global is the struct given to any template parsed for responses
