@@ -78,9 +78,9 @@ func parseEventsInto(c *census.Census, events *census.EventStream, pop *census.P
 		for {
 			select {
 			case err := <-events.Err:
-				if !strings.Contains(err.Error(), "EOF") {
-					fmt.Printf("Events: error: %v\n", err.Error())
-				}
+				//if !strings.Contains(err.Error(), "EOF") {
+				fmt.Printf("Events: error: %v\n", err.Error())
+				//}
 			case <-events.Closed:
 				fmt.Printf("Events: websocket closed\n")
 				break
