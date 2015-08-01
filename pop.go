@@ -49,6 +49,7 @@ func PopResp(pop *census.PopulationSet, server string) string {
 }
 
 func StartPopGathering() {
+	return // DISABLE
 	log.Printf("Starting to gather population information")
 	USEvents = Census.NewEventStream()
 	EUEvents = CensusEU.NewEventStream()

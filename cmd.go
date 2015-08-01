@@ -56,16 +56,22 @@ func init() {
 			out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
 			LookupWith(CensusEU, Census, bot, out, ev)
 		})
+	// !pop
 	RegisterCommand("pop",
 		func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
+			Respond("This command is temporarily disabled until some issues can be resolved", out, ev)
+			return
 			args := strings.Split(ev.Text, " ")
 			if len(args) <= 1 {
 				Respond("pop requires an argument you dingus", out, ev)
 			}
 			Respond(PopResp(USPop, args[1]), out, ev)
 		})
+	// !popeu
 	RegisterCommand("popeu",
 		func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
+			Respond("This command is temporarily disabled until some issues can be resolved", out, ev)
+			return
 			args := strings.Split(ev.Text, " ")
 			if len(args) <= 1 {
 				Respond("pop requires an argument you dingus", out, ev)
@@ -108,6 +114,9 @@ func LookupWith(c *census.Census, fallbackc *census.Census, bot *slack.Slack, ou
 		log.Printf("Query didn't return any error but character was nil")
 		Respond("Query didn't return any error but character was nil", out, ev)
 		return
+	}
+	if !census.CheckCache(census.CACHE_CHARACTER_EVENTS, "kills"+char.ID) {
+		Respond("This character has no kills cache.  May take some time to process kill information!", out, ev)
 	}
 	buff := bytes.NewBuffer([]byte(""))
 	if err := lookupTmpl.Execute(buff, Global{Character: char, Dev: Dev}); err != nil {
