@@ -147,7 +147,7 @@ func Dispatch(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.Messag
 		}
 	}()
 
-	if bot.GetInfo().User.Id == ev.UserId {
+	if bot.GetInfo().User.Name == ev.User {
 		return
 	}
 	c := strings.ToLower(strings.Split(ev.Text, " ")[0])
@@ -175,7 +175,7 @@ func Respond(s string, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
 	text := strings.Replace(s, "\\", "\n", -1)
 	o := slack.OutgoingMessage{}
 	o.Text = text
-	o.ChannelId = ev.ChannelId
+	o.Channel = ev.Channel
 	o.Type = ev.Type
 	out <- o
 

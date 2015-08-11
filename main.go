@@ -78,7 +78,7 @@ func StartBot() {
 
 }
 
-func sendMessages(api *slack.SlackWS, sender chan slack.OutgoingMessage) {
+func sendMessages(api *slack.WS, sender chan slack.OutgoingMessage) {
 	for {
 		select {
 		case msg := <-sender:
