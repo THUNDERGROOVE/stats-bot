@@ -16,8 +16,7 @@ const helpText = `Hi.\
 I'm stats-bot.  I have serveral commands!\
 !lookup   <name>\
 !lookupeu <name>\
-!pop      <server>\
-!popeu    <server>`
+!pop      <server>\`
 
 // Global is the struct given to any template parsed for responses
 type Global struct {
@@ -59,16 +58,16 @@ func init() {
 			if len(args) <= 1 {
 				Respond("pop requires an argument you dingus", out, ev)
 			}
-			Respond(PopResp(USPop, args[1]), out, ev)
-		})
-	// !popeu
-	RegisterCommand("popeu",
-		func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
-			args := strings.Split(ev.Text, " ")
-			if len(args) <= 1 {
-				Respond("pop requires an argument you dingus", out, ev)
+
+			if v, ok := Worlds[strings.ToLower(args[1])]; ok {
+				if v {
+					Respond(PopResp(USPop, args[1]), out, ev)
+				} else {
+					Respond(PopResp(EUPop, args[1]), out, ev)
+				}
+			} else {
+				Respond("I don't know about that server.  I'm sorry :(", out, ev)
 			}
-			Respond(PopResp(EUPop, args[1]), out, ev)
 		})
 }
 
@@ -155,7 +154,6 @@ func Dispatch(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.Messag
 			v.handler(bot, out, ev)
 
 		} else {
-			log.Printf("[Dispatch] Unhandled command '%v' ev: '%v'", c, ev.Text)
 			Respond("I don't know what you want from me :( do !help?", out, ev)
 		}
 	}

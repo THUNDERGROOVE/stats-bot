@@ -7,6 +7,17 @@ import (
 	"strings"
 )
 
+// true = US
+var Worlds = map[string]bool{
+	"ceres":    false,
+	"lithcorp": false,
+	"xelas":    true,
+	"palos":    true,
+	"crux":     true,
+	"genudine": true,
+	"searhus":  true,
+}
+
 var (
 	USEvents *census.EventStream
 	EUEvents *census.EventStream
