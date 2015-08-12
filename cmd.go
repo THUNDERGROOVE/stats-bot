@@ -156,7 +156,7 @@ func Dispatch(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.Messag
 
 		} else {
 			log.Printf("[Dispatch] Unhandled command '%v' ev: '%v'", c, ev.Text)
-			Respond("!I don't know what you want from me :( do 'help'?", out, ev)
+			Respond("I don't know what you want from me :( do !help?", out, ev)
 		}
 	}
 }
