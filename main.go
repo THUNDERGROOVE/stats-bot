@@ -14,7 +14,7 @@ var CensusEU *census.Census
 var Dev bool
 
 func main() {
-	log.SetFlags(log.Lshortfile)
+	log.SetFlags(log.Lshortfile | log.LstdFlags)
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("Recovered from panic! [%v]", r)
