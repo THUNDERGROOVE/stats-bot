@@ -6,6 +6,7 @@ import (
 	"github.com/THUNDERGROOVE/census"
 	"github.com/nlopes/slack"
 	"log"
+	"os"
 	"strings"
 	"text/template"
 )
@@ -28,7 +29,13 @@ var lookupTmpl *template.Template
 
 func init() {
 
-	lookupTmpl = template.Must(template.ParseFiles("lookup_template.tmpl"))
+	lookupName := "/assets/lookup_template.tmpl"
+
+	if _, err := os.Stat(lookupName); err != nil {
+		lookupName = "lookup_template.tmpl"
+	}
+
+	lookupTmpl = template.Must(template.ParseFiles(lookupName))
 
 	// !help
 	RegisterCommand("help",

@@ -5,6 +5,8 @@ import (
 	"github.com/THUNDERGROOVE/census"
 	"github.com/nlopes/slack"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"time"
 )
@@ -27,11 +29,21 @@ func main() {
 		log.Println("Git data found.  Running in development mode")
 		Dev = true
 	}
+
+	if Dev {
+		go func() {
+			log.Println(http.ListenAndServe("localhost:6060", nil))
+		}()
+	}
+
 	StartBot()
 }
 
 func StartBot() {
 	log.Printf("Setting up slack bot")
+
+	go StartHTTPServer()
+
 	bot := slack.New(Config.Token)
 
 	log.Printf("Setting up census client")
@@ -44,7 +56,7 @@ func StartBot() {
 	t, err := bot.AuthTest()
 
 	if err != nil {
-		log.Printf("Error in auth test")
+		log.Printf("Error in auth test: ", err.Error())
 		return
 	}
 
