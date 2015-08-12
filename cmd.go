@@ -29,13 +29,8 @@ var lookupTmpl *template.Template
 
 func init() {
 
-	//var err error
 	lookupTmpl = template.Must(template.ParseFiles("lookup_template.tmpl"))
-	/*
-		lookupTmpl, err = lookupTmpl.ParseFiles("lookup_template.tmpl")
-		if err != nil {
-			log.Fatalf("Template failed to compile: [%v]", err.Error())
-		}*/
+
 	// !help
 	RegisterCommand("help",
 		func(bot *slack.Slack,
@@ -56,11 +51,10 @@ func init() {
 			out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
 			LookupWith(CensusEU, Census, bot, out, ev)
 		})
+
 	// !pop
 	RegisterCommand("pop",
 		func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
-			Respond("This command is temporarily disabled until some issues can be resolved", out, ev)
-			return
 			args := strings.Split(ev.Text, " ")
 			if len(args) <= 1 {
 				Respond("pop requires an argument you dingus", out, ev)
@@ -70,8 +64,6 @@ func init() {
 	// !popeu
 	RegisterCommand("popeu",
 		func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
-			Respond("This command is temporarily disabled until some issues can be resolved", out, ev)
-			return
 			args := strings.Split(ev.Text, " ")
 			if len(args) <= 1 {
 				Respond("pop requires an argument you dingus", out, ev)

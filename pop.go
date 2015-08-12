@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/THUNDERGROOVE/census"
-	"log"
 	"strconv"
 	"strings"
 )
@@ -49,65 +48,78 @@ func PopResp(pop *census.PopulationSet, server string) string {
 }
 
 func StartPopGathering() {
-	return // DISABLE
-	log.Printf("Starting to gather population information")
-	USEvents = Census.NewEventStream()
-	EUEvents = CensusEU.NewEventStream()
+	go DoUSPop()
+	go DoEUPop()
+}
 
+func DoUSPop() {
 	USPop = Census.NewPopulationSet()
+	for {
+		USEvents = Census.NewEventStream()
+
+		sub := census.NewEventSubscription()
+		sub.Worlds = []string{"all"}
+		sub.Characters = []string{"all"}
+		sub.EventNames = []string{"PlayerLogin", "PlayerLogout"}
+
+		if err := USEvents.Subscribe(sub); err != nil {
+			fmt.Printf("FAIL: Couldn't subscribe to events: [%v]\n", err.Error())
+		}
+
+		parseEventsInto(Census, USEvents, USPop)
+	}
+}
+
+func DoEUPop() {
 	EUPop = CensusEU.NewPopulationSet()
+	for {
+		EUEvents = CensusEU.NewEventStream()
 
-	sub := census.NewEventSubscription()
-	sub.Worlds = []string{"all"}
-	sub.Characters = []string{"all"}
-	sub.EventNames = []string{"PlayerLogin", "PlayerLogout"}
+		sub := census.NewEventSubscription()
+		sub.Worlds = []string{"all"}
+		sub.Characters = []string{"all"}
+		sub.EventNames = []string{"PlayerLogin", "PlayerLogout"}
 
-	if err := USEvents.Subscribe(sub); err != nil {
-		fmt.Printf("FAIL: Couldn't subscribe to events: [%v]\n", err.Error())
+		if err := EUEvents.Subscribe(sub); err != nil {
+			fmt.Printf("FAIL: Couldn't subscribe to events: [%v]\n", err.Error())
+		}
+
+		parseEventsInto(CensusEU, EUEvents, EUPop)
 	}
-
-	if err := EUEvents.Subscribe(sub); err != nil {
-		fmt.Printf("FAIL: Couldn't subscribe to events: [%v]\n", err.Error())
-	}
-	parseEventsInto(Census, USEvents, USPop)
-	parseEventsInto(CensusEU, EUEvents, EUPop)
 }
 
 func parseEventsInto(c *census.Census, events *census.EventStream, pop *census.PopulationSet) {
-	log.Printf("Starting event parsing routine")
-	go func() {
-		for {
-			select {
-			case err := <-events.Err:
-				//if !strings.Contains(err.Error(), "EOF") {
+	for {
+		select {
+		case err := <-events.Err:
+			if strings.Contains(err.Error(), census.ErrCharDoesNotExist.Error()) {
 				fmt.Printf("Events: error: %v\n", err.Error())
-				//}
-			case <-events.Closed:
-				fmt.Printf("Events: websocket closed\n")
-				break
-			case event := <-events.Events:
-				switch event.Payload.EventName {
-				case "PlayerLogin":
-					ch, err := c.GetCharacterByID(event.Payload.CharacterID)
-					if err != nil {
-						fmt.Printf("Events: ERROR: Failed to get character from ID: '%v' [%v]\n",
-							event.Payload.CharacterID, err.Error())
-						continue
-					}
-					server := c.GetServerByID(event.Payload.WorldID)
-					pop.PlayerLogin(server.Name.En, ch.FactionID)
-				case "PlayerLogout":
-					ch, err := c.GetCharacterByID(event.Payload.CharacterID)
-					if err != nil {
-						fmt.Printf("ERROR: Failed to get character from ID: '%v' [%v]\n",
-							event.Payload.CharacterID, err.Error())
-						continue
-					}
-					server := c.GetServerByID(event.Payload.WorldID)
-					pop.PlayerLogin(server.Name.En, ch.FactionID)
+			}
+		case <-events.Closed:
+			fmt.Printf("Events: websocket closed\n")
+			break
+		case event := <-events.Events:
+			switch event.Payload.EventName {
+			case "PlayerLogin":
+				ch, err := c.GetCharacterByID(event.Payload.CharacterID)
+				if err != nil {
+					fmt.Printf("Events: ERROR: Failed to get character from ID: '%v' [%v]\n",
+						event.Payload.CharacterID, err.Error())
+					continue
 				}
+				server := c.GetServerByID(event.Payload.WorldID)
+				pop.PlayerLogin(server.Name.En, ch.FactionID)
+			case "PlayerLogout":
+				ch, err := c.GetCharacterByID(event.Payload.CharacterID)
+				if err != nil {
+					fmt.Printf("ERROR: Failed to get character from ID: '%v' [%v]\n",
+						event.Payload.CharacterID, err.Error())
+					continue
+				}
+				server := c.GetServerByID(event.Payload.WorldID)
+				pop.PlayerLogin(server.Name.En, ch.FactionID)
 			}
 		}
-		events.Close()
-	}()
+	}
+	events.Close()
 }

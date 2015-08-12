@@ -45,6 +45,7 @@ func StartBot() {
 
 	if err != nil {
 		log.Printf("Error in auth test")
+		return
 	}
 
 	log.Printf("Auth: %v on team %v", t.User, t.Team)
@@ -69,8 +70,6 @@ func StartBot() {
 		case msg := <-receiver:
 			switch m := msg.Data.(type) {
 			case *slack.MessageEvent:
-				//log.Printf("Got message: %v -> %v ", getUsername(bot, m.UserId), m.Text)
-
 				Dispatch(bot, sender, m)
 			}
 		}
