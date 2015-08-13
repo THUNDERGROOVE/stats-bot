@@ -78,6 +78,18 @@ func init() {
 		})
 }
 
+func lookupStatsChar(c *census.Census, name string) (string, error) {
+	char, err := c.GetCharacterByName(name)
+	if err != nil {
+		return "", err
+	}
+	buf := bytes.NewBufferString("")
+	if err := lookupTmpl.Execute(buf, Global{Character: char, Dev: Dev}); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
 // LookupWith looks for a character given a several paramaters
 func LookupWith(c *census.Census, fallbackc *census.Census, bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
 	args := strings.Split(ev.Text, " ")
