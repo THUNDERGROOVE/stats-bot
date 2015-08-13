@@ -27,8 +27,12 @@
 
 ## Implementation
 - Storage: PostgreSQL
+
   Using `docker run -v /host/path:/container/path db`
+
   Two tables:
+  
   - Leaders {leadername | outfitname }
   - Reports {playername | reportee | additionalinfo | cleared}
+
   Use Gorm?
