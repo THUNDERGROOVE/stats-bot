@@ -1,3 +1,7 @@
+// cmd.go contains all of our code to parse !commands they will be going away
+// soon though so expect this file to shorten up or go away completely.  That
+// is if I can get Slack to get back at me about /command timeouts.
+
 package main
 
 import (
@@ -11,6 +15,7 @@ import (
 	"text/template"
 )
 
+// @TODO: Rip out after we convert over to all /commands
 var Commands = make(map[string]*Cmd)
 
 const helpText = `Hi.\
@@ -91,48 +96,28 @@ func lookupStatsChar(c *census.Census, name string) (string, error) {
 }
 
 // LookupWith looks for a character given a several paramaters
+//
+// @TODO: Just cleaned up a bit.  Anything else we can do?
 func LookupWith(c *census.Census, fallbackc *census.Census, bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
 	args := strings.Split(ev.Text, " ")
 	if len(args) <= 1 {
 		Respond("Do you really expect me to lookup nothing?", out, ev)
 		return
 	}
-	name := args[1]
-	char, err := c.GetCharacterByName(name)
-	if err != nil {
-		if strings.Contains(err.Error(), "Get") {
-			Respond("ERROR: The server closed the connection on us.  The API is either down or we are being rate-limited", out, ev)
-			return
-		} else if err != nil {
-			Respond(fmt.Sprintf("Couldn't find the character '%v'", name), out, ev)
-			return
-		}
-		log.Printf("Error getting character info: [%v] trying fallback", err.Error())
 
-		char, err = fallbackc.GetCharacterByName(name)
+	var response string
+	var err error
+
+	name := args[1]
+
+	response, err = lookupStatsChar(c, name)
+	if err != nil {
+		resp, err := lookupStatsChar(fallbackc, name)
 		if err != nil {
-			if strings.Contains(err.Error(), "Get") {
-				Respond("ERROR: The server closed the connection on us.  The API is either down or we are being rate-limited", out, ev)
-				return
-			} else if err != nil {
-				Respond(fmt.Sprintf("Couldn't find the character '%v'", name), out, ev)
-				return
-			}
+			response = "The character wasn't found."
 		}
 	}
-	if char == nil {
-		log.Printf("Query didn't return any error but character was nil")
-		Respond("Query didn't return any error but character was nil", out, ev)
-		return
-	}
-	if !census.CheckCache(census.CACHE_CHARACTER_EVENTS, "kills"+char.ID) {
-		Respond("This character has no kills cache.  May take some time to process kill information!", out, ev)
-	}
-	buff := bytes.NewBuffer([]byte(""))
-	if err := lookupTmpl.Execute(buff, Global{Character: char, Dev: Dev}); err != nil {
-		buff.WriteString("\nerror encountered" + err.Error())
-	}
-	Respond(buff.String(), out, ev)
+	Respond(response, out, ev)
 }
 
 // Cmd is a command handler struct

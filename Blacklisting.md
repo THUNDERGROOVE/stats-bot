@@ -20,10 +20,14 @@
   *Only usable by slack admins*
  
 ## Leader reporting.
- If a reported players outfit has a leader marked with /blacklist leader then
- we will send them a message on slack via statsbot with the information.
+If a reported players outfit has a leader marked with /blacklist leader then
+we will send them a message on slack via statsbot with the information.
 
- They can then take action with the member or see what actually happened.
+They can then take action with the member or see what actually happened.
+
+## Integration with !lookup&/lookup
+If a user has been reported, it will display something in the output of our
+lookup commands - @saithar
 
 ## Implementation
 - Storage: PostgreSQL
