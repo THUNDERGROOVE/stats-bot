@@ -1,2 +1,7 @@
 *.swp
+stats-bot
+deploy.sh
+update.sh
 *.exe
+cache
+*.json
