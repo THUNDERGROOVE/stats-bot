@@ -15,6 +15,7 @@ var searchTmpl *template.Template
 func init() {
 	log.Println("Registering blacklist commands")
 	searchTmpl = parseTemplate("search.tmpl")
+
 	RegisterCommand("reportpsn", cmdReportPSN, CMD_DEV)
 	RegisterCommand("searchreport", cmdSearchReports, CMD_DEV)
 }
@@ -62,6 +63,14 @@ func cmdReportPSN(ctx *Context) {
 	}
 	db.NewReport(ctx.Ev.Name, char.Name.First, psn, info, char.Parent)
 	ctx.Respond(fmt.Sprintf("Reported: %v for %v.", char.Name.First, info))
+}
+
+func cmdIsAdmin(ctx *Context) {
+	if isAdmin(ctx) {
+		ctx.Respond("You are an admin")
+	} else {
+		ctx.Respond("You are not an admin")
+	}
 }
 
 func isAdmin(ctx *Context) bool {
