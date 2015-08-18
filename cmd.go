@@ -6,7 +6,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/THUNDERGROOVE/census"
 	"github.com/nlopes/slack"
 	"log"
@@ -17,6 +16,18 @@ import (
 
 // @TODO: Rip out after we convert over to all /commands
 var Commands = make(map[string]*Cmd)
+
+// Context is what's given to every command handler.  It should contain
+// everything a command will need
+type Context struct {
+	Bot *slack.Slack
+	Out chan slack.OutgoingMessage
+	Ev  *slack.MessageEvent
+}
+
+func (c *Context) Respond(s string) {
+	Respond(s, c.Out, c.Ev)
+}
 
 const helpText = `Hi.\
 I'm stats-bot.  I have serveral commands!\
@@ -33,9 +44,10 @@ type Global struct {
 var lookupTmpl *template.Template
 
 func init() {
-
+	// Default directory if we're in a Docker environment
 	lookupName := "/assets/lookup_template.tmpl"
 
+	// Sometimes it might just be in the current working directory
 	if _, err := os.Stat(lookupName); err != nil {
 		lookupName = "lookup_template.tmpl"
 	}
@@ -44,41 +56,38 @@ func init() {
 
 	// !help
 	RegisterCommand("help",
-		func(bot *slack.Slack,
-			out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
-			Respond(helpText, out, ev)
+		func(ctx *Context) {
+			ctx.Respond(helpText)
 		})
 
 	// !lookup
 	RegisterCommand("lookup",
-		func(bot *slack.Slack,
-			out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
-			LookupWith(Census, CensusEU, bot, out, ev)
+		func(ctx *Context) {
+			LookupWith(Census, CensusEU, ctx)
 		})
 
 	// !lookupeu
 	RegisterCommand("lookupeu",
-		func(bot *slack.Slack,
-			out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
-			LookupWith(CensusEU, Census, bot, out, ev)
+		func(ctx *Context) {
+			LookupWith(CensusEU, Census, ctx)
 		})
 
 	// !pop
 	RegisterCommand("pop",
-		func(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
-			args := strings.Split(ev.Text, " ")
+		func(ctx *Context) {
+			args := strings.Split(ctx.Ev.Text, " ")
 			if len(args) <= 1 {
-				Respond("pop requires an argument you dingus", out, ev)
+				ctx.Respond("pop requires an argument you dingus")
 			}
 
 			if v, ok := Worlds[strings.ToLower(args[1])]; ok {
 				if v {
-					Respond(PopResp(USPop, args[1]), out, ev)
+					ctx.Respond(PopResp(USPop, args[1]))
 				} else {
-					Respond(PopResp(EUPop, args[1]), out, ev)
+					ctx.Respond(PopResp(EUPop, args[1]))
 				}
 			} else {
-				Respond("I don't know about that server.  I'm sorry :(", out, ev)
+				ctx.Respond("I don't know about that server.  I'm sorry :(")
 			}
 		})
 }
@@ -98,10 +107,10 @@ func lookupStatsChar(c *census.Census, name string) (string, error) {
 // LookupWith looks for a character given a several paramaters
 //
 // @TODO: Just cleaned up a bit.  Anything else we can do?
-func LookupWith(c *census.Census, fallbackc *census.Census, bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
-	args := strings.Split(ev.Text, " ")
+func LookupWith(c *census.Census, fallbackc *census.Census, ctx *Context) {
+	args := strings.Split(ctx.Ev.Text, " ")
 	if len(args) <= 1 {
-		Respond("Do you really expect me to lookup nothing?", out, ev)
+		ctx.Respond("Do you really expect me to lookup nothing?")
 		return
 	}
 
@@ -116,18 +125,19 @@ func LookupWith(c *census.Census, fallbackc *census.Census, bot *slack.Slack, ou
 		if err != nil {
 			response = "The character wasn't found."
 		}
+		response = resp
 	}
-	Respond(response, out, ev)
+	ctx.Respond(response)
 }
 
 // Cmd is a command handler struct
 type Cmd struct {
 	name    string
-	handler func(*slack.Slack, chan slack.OutgoingMessage, *slack.MessageEvent)
+	handler func(*Context)
 }
 
 // RegisterCommand registers a command for the bot to dispatch
-func RegisterCommand(name string, handler func(*slack.Slack, chan slack.OutgoingMessage, *slack.MessageEvent)) {
+func RegisterCommand(name string, handler func(*Context)) {
 	cmd := new(Cmd)
 	cmd.name = name
 	cmd.handler = handler
@@ -135,30 +145,30 @@ func RegisterCommand(name string, handler func(*slack.Slack, chan slack.Outgoing
 }
 
 // Dispatch sends a message to the bot
-func Dispatch(bot *slack.Slack, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
+func Dispatch(ctx *Context) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("Recovered from panic in dispatch")
 		}
 	}()
 
-	if bot.GetInfo().User.Name == ev.User {
+	if ctx.Bot.GetInfo().User.Name == ctx.Ev.User {
 		return
 	}
-	c := strings.ToLower(strings.Split(ev.Text, " ")[0])
-	if len(ev.Text) == 0 {
+	c := strings.ToLower(strings.Split(ctx.Ev.Text, " ")[0])
+	if len(ctx.Ev.Text) == 0 {
 		log.Printf("Got blank message")
 		return
 	}
-	if ev.Text[0] == '!' {
+	if ctx.Ev.Text[0] == '!' {
 
 		if v, ok := Commands[strings.TrimLeft(c, "!")]; ok {
 
 			//log.Printf("[Dispatch] Sending to %v", v.name)
-			v.handler(bot, out, ev)
+			v.handler(ctx)
 
 		} else {
-			Respond("I don't know what you want from me :( do !help?", out, ev)
+			ctx.Respond("I don't know what you want from me :( do !help?")
 		}
 	}
 }

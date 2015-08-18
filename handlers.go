@@ -58,7 +58,7 @@ func handleLookup(rw http.ResponseWriter, req *http.Request) {
 		out, err := lookupStatsChar(Census, c.Text)
 		// @TODO: Refactor this?
 		if err != nil {
-			r.Write([]byte(err.Error()))
+			rw.Write([]byte(err.Error()))
 		} else {
 			rw.Write([]byte(out))
 		}

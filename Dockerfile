@@ -1,16 +1,7 @@
 FROM golang
 MAINTAINER THUNDERGROOVE
 
-#add . /go/src/github.com/THUNDERGROOVE/stats-bot
-
-#WORKDIR /go/src/github.com/THUNDERGROOVE/stats-bot
-
-#RUN go get golang.org/x/text/encoding
-
-#RUN go get ./... # It's magic!
-
-#RUN go install github.com/THUNDERGROOVE/stats-bot
-
+ENV DOCKER 1
 
 ADD lookup_template.tmpl /assets/
 

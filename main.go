@@ -82,7 +82,7 @@ func StartBot() {
 		case msg := <-receiver:
 			switch m := msg.Data.(type) {
 			case *slack.MessageEvent:
-				Dispatch(bot, sender, m)
+				Dispatch(&Context{Bot: bot, Ev: m, Out: sender})
 			}
 		}
 	}

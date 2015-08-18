@@ -5,6 +5,7 @@ package db
 import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/mattn/go-sqlite3"
+	"os"
 
 	"log"
 )
@@ -14,15 +15,24 @@ import (
 var DB *gorm.DB
 
 func init() {
-	if err := LoadSQLite("/data/sqlite.db"); err != nil {
-		log.Fatalf("[DB] error: %v", err.Error())
+	if os.Getenv("DOCKER") == "" {
+		if err := LoadSQLite("sqlite.db"); err != nil {
+			log.Printf("[DB] error: %v\n", err.Error())
+		}
+	} else {
+		log.Printf("[DB] Opening in Docker")
+		if err := LoadSQLite("/data/sqlite.db"); err != nil {
+			log.Fatalf("[DB] error: %v", err.Error())
+		}
 	}
+
 	DB.CreateTable(Report{})
+	DB.CreateTable(Outfit{})
 }
 
 // LoadSQLite loads the database as SQLite this should be used for local testing
-func LoadSQLite(filename) error {
-	var err error
-	DB, err = gorm.Open("sqlite3", filename)
+func LoadSQLite(filename string) error {
+	db, err := gorm.Open("sqlite3", filename)
+	DB = &db
 	return err
 }

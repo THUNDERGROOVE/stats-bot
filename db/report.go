@@ -20,7 +20,10 @@ type Report struct {
 func GetReport(ID int) *Report {
 	report := new(Report)
 
-	DB.Where(Report{ID: ID}).First(report)
+	q := Report{}
+	q.ID = uint(ID)
+
+	DB.Where(q).First(report)
 	return report
 }
 
@@ -35,4 +38,15 @@ func NewReport(reporter, player, PSN, info string, c *census.Census) {
 
 	// TODO Figure out when to get our CID.  Here seams like a smart place?
 	DB.Create(&report)
+}
+
+// ToggleClear toggles the Cleared value in the database.
+func (r *Report) ToggleClear() {
+	if r.Cleared {
+		r.Cleared = false
+		DB.Save(r)
+	} else {
+		r.Cleared = true
+		DB.Save(r)
+	}
 }
