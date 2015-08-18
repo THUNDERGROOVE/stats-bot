@@ -7,28 +7,20 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
-	"os"
 	"time"
 )
 
-var Census *census.Census
-var CensusEU *census.Census
-var Dev bool
+var (
+	Census   *census.Census
+	CensusEU *census.Census
+
+	Dev     bool
+	Commit  string
+	Version string
+)
 
 func main() {
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
-	defer func() {
-		if r := recover(); r != nil {
-			log.Printf("Recovered from panic! [%v]", r)
-			log.Printf("Restarting bot")
-			StartBot()
-		}
-	}()
-
-	if _, err := os.Stat(".git"); err == nil {
-		log.Println("Git data found.  Running in development mode")
-		Dev = true
-	}
 
 	if Dev {
 		go func() {
@@ -40,6 +32,7 @@ func main() {
 }
 
 func StartBot() {
+	log.Printf("stats-bot: v%v#%v", Version, Commit)
 	log.Printf("Setting up slack bot")
 
 	go StartHTTPServer()
@@ -56,7 +49,7 @@ func StartBot() {
 	t, err := bot.AuthTest()
 
 	if err != nil {
-		log.Printf("Error in auth test: ", err.Error())
+		log.Printf("Error in auth test: [%v]", err.Error())
 		return
 	}
 

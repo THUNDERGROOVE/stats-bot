@@ -100,6 +100,7 @@ func DoEUPop() {
 }
 
 func parseEventsInto(c *census.Census, events *census.EventStream, pop *census.PopulationSet) {
+loop:
 	for {
 		select {
 		case err := <-events.Err:
@@ -108,7 +109,7 @@ func parseEventsInto(c *census.Census, events *census.EventStream, pop *census.P
 			}
 		case <-events.Closed:
 			fmt.Printf("Events: websocket closed\n")
-			break
+			break loop
 		case event := <-events.Events:
 			switch event.Payload.EventName {
 			case "PlayerLogin":

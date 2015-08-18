@@ -1,5 +1,7 @@
+commit = `git rev-parse --short HEAD`
+version = `git describe --abbrev=0`
 all:
-	go build
+	go build -ldflags "-X main.Commit $(commit) -X main.Version $(version)"
 
 docker-build:
 	docker build -t thundergroove/stats-bot .
