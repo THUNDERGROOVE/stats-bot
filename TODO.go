@@ -8,10 +8,7 @@ This allows us to avoid lookups and have logic to auto-purge non-offline players
 Maybe not.  This could use a lot of memory.  Hmm
 */
 
-// @TODO: Setup incoming webhoks for slash command support
+// @FEATURE: Add alerts to pop page
+// @FEATURE: !myreports
 
-// @TODO: Convert !lookup & !lookupeu to /lookup
-// @TODO: Talk to other outfit leaders about blacklist implementation
-
-// @FEATURE: !tkreport
 // @FEATURE: !blacklist

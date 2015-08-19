@@ -93,7 +93,7 @@ func cmdClearReport(ctx *Context) {
 		return
 	}
 
-	if !isAdmin(ctx) || !(r.Reporter == ctx.Ev.User) {
+	if !isAdmin(ctx) || (r.Reporter == ctx.Ev.User) {
 		ctx.Respond("You do not have permission to do that")
 		return
 	}
@@ -124,7 +124,8 @@ func cmdDeleteReport(ctx *Context) {
 		ctx.Respond("That report doesn't exist")
 	}
 
-	if !isAdmin(ctx) || !(r.Reporter == ctx.Ev.User) {
+	if !isAdmin(ctx) || (r.Reporter == ctx.Ev.User) {
+		log.Printf("! %v == %v", r.Reporter, ctx.Ev.User)
 		ctx.Respond("You do not have permission to do that")
 		return
 	}
