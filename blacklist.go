@@ -38,11 +38,11 @@ var searchTmpl *template.Template
 func init() {
 	searchTmpl = parseTemplate("search.tmpl")
 
-	RegisterCommand("reportpsn", cmdReportPSN, CMD_ADMIN)
-	RegisterCommand("report", cmdReport, CMD_ADMIN)
+	RegisterCommand("reportpsn", cmdReportPSN, CMD_READY)
+	RegisterCommand("report", cmdReport, CMD_READY)
 
-	RegisterCommand("clearreport", cmdClearReport, CMD_ADMIN)
-	RegisterCommand("deletereport", cmdDeleteReport, CMD_ADMIN)
+	RegisterCommand("clearreport", cmdClearReport, CMD_READY)
+	RegisterCommand("deletereport", cmdDeleteReport, CMD_READY)
 
 	RegisterCommand("searchreport", cmdSearchReports, CMD_ADMIN)
 	RegisterCommand("searchreportpsn", cmdSearchReportsPSN, CMD_ADMIN)

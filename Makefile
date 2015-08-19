@@ -3,6 +3,11 @@ version = `git describe --abbrev=0`
 all:
 	go build -ldflags "-X main.Commit $(commit) -X main.Version $(version)"
 
+docker:
+	make
+	make docker-build
+	make docker-push
+
 docker-build:
 	docker build -t thundergroove/stats-bot .
 docker-push:

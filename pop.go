@@ -139,6 +139,9 @@ loop:
 			case "PlayerLogin":
 				ch, err := c.GetCharacterByID(event.Payload.CharacterID)
 				if err != nil {
+					if err == census.ErrCharDoesNotExist {
+						continue
+					}
 					fmt.Printf("Events: ERROR: Failed to get character from ID: '%v' [%v]\n",
 						event.Payload.CharacterID, err.Error())
 					continue
