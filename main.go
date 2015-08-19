@@ -59,21 +59,16 @@ func main() {
 
 func StartBot() {
 	log.Printf("stats-bot: v%v#%v", Version, Commit)
-	log.Printf("Setting up slack bot")
 
-	go StartHTTPServer()
-
+	go StartHTTPServer() // Has to run in a Goroutine.  Blocks
 	bot := slack.New(Config.Token)
 
-	log.Printf("Setting up census client")
 	Census = census.NewCensus("s:maximumtwang", "ps2ps4us:v2")
-
 	CensusEU = census.NewCensus("s:maximumtwang", "ps2ps4eu:v2")
 
 	StartPopGathering()
 
 	t, err := bot.AuthTest()
-
 	if err != nil {
 		log.Printf("Error in auth test: [%v]", err.Error())
 		return
@@ -81,9 +76,7 @@ func StartBot() {
 
 	log.Printf("Auth: %v on team %v", t.User, t.Team)
 
-	log.Printf("Starting slack events websocket\n")
 	api, err := bot.StartRTM("", fmt.Sprintf("http://%v:8080/", "http://localhost/"))
-
 	if err != nil {
 		log.Printf("Error setting up RTM [%v]", err.Error())
 	}
