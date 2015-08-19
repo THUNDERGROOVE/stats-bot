@@ -28,6 +28,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/THUNDERGROOVE/census"
 	"github.com/nlopes/slack"
 	"log"
@@ -42,6 +43,7 @@ type cmdType uint8
 
 const (
 	CMD_READY cmdType = iota
+	CMD_ADMIN
 	CMD_DEV
 )
 
@@ -89,6 +91,8 @@ func init() {
 
 	// !pop
 	RegisterCommand("pop", cmdPop, CMD_READY)
+
+	RegisterCommand("version", cmdVersion, CMD_READY)
 }
 
 func cmdHelp(ctx *Context) {
@@ -96,7 +100,7 @@ func cmdHelp(ctx *Context) {
 }
 
 func cmdVersion(ctx *Context) {
-
+	ctx.Respond(fmt.Sprintf("stats-bot: v%v running commit %v", Version, Commit))
 }
 
 func cmdLookup(ctx *Context) {
@@ -162,25 +166,34 @@ func LookupWith(c *census.Census, fallbackc *census.Census, ctx *Context) {
 
 // Cmd is a command handler struct
 type Cmd struct {
-	name    string
-	handler func(*Context)
+	name       string
+	handler    func(*Context)
+	adminCheck bool
 }
 
 // RegisterCommand registers a command for the bot to dispatch
 func RegisterCommand(name string, handler func(*Context), state cmdType) {
 	cmd := new(Cmd)
 	cmd.name = name
-	if state == CMD_DEV && !Dev {
-		cmd.handler = notReadyYet
-	} else {
+	switch state {
+	case CMD_DEV:
+		if !Dev {
+			cmd.handler = notReadyYet
+		} else {
+			cmd.handler = handler
+		}
+	case CMD_READY:
 		cmd.handler = handler
+	case CMD_ADMIN:
+		cmd.adminCheck = true
+		cmd.handler = handler
+
 	}
 	Commands[name] = cmd
 }
 
 func notReadyYet(ctx *Context) {
 	ctx.Respond("That command isn't ready yet")
-
 }
 
 // Dispatch sends a message to the bot
@@ -201,12 +214,12 @@ func Dispatch(ctx *Context) {
 		return
 	}
 	if ctx.Ev.Text[0] == '!' {
-
 		if v, ok := Commands[strings.TrimLeft(c, "!")]; ok {
-
-			//log.Printf("[Dispatch] Sending to %v", v.name)
-			v.handler(ctx)
-
+			if !v.adminCheck || isAdmin(ctx) {
+				v.handler(ctx)
+			} else {
+				ctx.Respond("You do not have permission to do that.  Sorry :(")
+			}
 		} else {
 			ctx.Respond("I don't know what you want from me :( do !help?")
 		}

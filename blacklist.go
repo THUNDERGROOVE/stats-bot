@@ -24,11 +24,12 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"text/template"
 
+	"github.com/THUNDERGROOVE/census"
 	"github.com/THUNDERGROOVE/stats-bot/db"
 )
 
@@ -39,7 +40,14 @@ func init() {
 
 	RegisterCommand("reportpsn", cmdReportPSN, CMD_DEV)
 	RegisterCommand("report", cmdReport, CMD_DEV)
+
+	RegisterCommand("clearreport", cmdClearReport, CMD_DEV)
+	RegisterCommand("deletereport", cmdDeleteReport, CMD_DEV)
+
 	RegisterCommand("searchreport", cmdSearchReports, CMD_DEV)
+	RegisterCommand("searchreportpsn", cmdSearchReportsPSN, CMD_DEV)
+	RegisterCommand("searchreportoutfit", cmdSearchReportsOutfit, CMD_DEV)
+
 	RegisterCommand("isadmin", cmdIsAdmin, CMD_READY)
 }
 
@@ -49,7 +57,7 @@ func cmdReport(ctx *Context) {
 		ctx.Respond("report <name> <additional information>")
 	}
 	name := args[1]
-	info := strings.Join(args[len(args)-2:], " ")
+	info := strings.Join(args[2:], " ")
 
 	report(name, "not specified", info, ctx)
 }
@@ -61,9 +69,93 @@ func cmdReportPSN(ctx *Context) {
 	}
 	name := args[1]
 	psn := args[2]
-	info := strings.Join(args[len(args)-3:], " ")
+	info := strings.Join(args[3:], " ")
 
 	report(name, psn, info, ctx)
+}
+
+func cmdClearReport(ctx *Context) {
+	args := strings.Split(ctx.Ev.Text, " ")
+	if len(args) < 2 {
+		ctx.Respond("clearreport <id>")
+		return
+	}
+	sid := args[1]
+	id, err := strconv.Atoi(sid)
+	if err != nil {
+		ctx.Respond("couldn't parse ID")
+		return
+	}
+
+	r := db.GetReport(id)
+	if r == nil {
+		ctx.Respond("That report doesn't exist")
+		return
+	}
+
+	r.ToggleClear()
+	if r.Cleared {
+		ctx.Respond("The issue was marked as resolved")
+	} else {
+		ctx.Respond("The issue was re-opened")
+	}
+}
+
+func cmdDeleteReport(ctx *Context) {
+	args := strings.Split(ctx.Ev.Text, " ")
+	if len(args) < 2 {
+		ctx.Respond("deletereport <id>")
+		return
+	}
+	sid := args[1]
+	id, err := strconv.Atoi(sid)
+	if err != nil {
+		ctx.Respond("couldn't parse ID")
+		return
+	}
+
+	r := db.GetReport(id)
+	if r == nil {
+		ctx.Respond("That report doesn't exist")
+	}
+
+	db.DB.Delete(r)
+	ctx.Respond("That report was successfully deleted")
+}
+
+func cmdSearchReportsPSN(ctx *Context) {
+	args := strings.Split(ctx.Ev.Text, " ")
+	search := args[1]
+
+	reports := []*db.Report{}
+	g := map[string]interface{}{}
+
+	db.DB.Where("psn_name LIKE ?", "%"+search+"%").Find(&reports)
+	g["Reports"] = reports
+
+	renderTemplate(searchTmpl, g, ctx)
+}
+func cmdSearchReportsOutfit(ctx *Context) {
+	args := strings.Split(ctx.Ev.Text, " ")
+	search := strings.Join(args[1:], " ")
+	log.Printf("search: '%v'", search)
+
+	var err error
+	var outfit *census.Outfit
+	if outfit, err = Census.GetOutfitByName(search); err != nil {
+		err = nil
+		if outfit, err = CensusEU.GetOutfitByName(search); err != nil {
+			ctx.Respond("The outfit you're looking for doesn't exist.")
+			return
+		}
+	}
+
+	reports := []*db.Report{}
+	g := map[string]interface{}{}
+	db.DB.Where("outfit_cid = ?", outfit.ID).Find(&reports)
+	g["Reports"] = reports
+	g["Search"] = search
+	renderTemplate(searchTmpl, g, ctx)
 }
 
 func cmdSearchReports(ctx *Context) {
@@ -73,12 +165,11 @@ func cmdSearchReports(ctx *Context) {
 	reports := []*db.Report{}
 	g := map[string]interface{}{}
 
-	db.DB.Where("name like ?", fmt.Sprintf("%%%v%%", search)).Find(&reports)
+	db.DB.Where("name like ?", "%"+search+"%").Find(&reports)
+	g["Search"] = search
 	g["Reports"] = reports
 
-	buf := bytes.NewBufferString("")
-	searchTmpl.Execute(buf, g)
-	ctx.Respond(buf.String())
+	renderTemplate(searchTmpl, g, ctx)
 }
 
 func cmdIsAdmin(ctx *Context) {
@@ -90,14 +181,22 @@ func cmdIsAdmin(ctx *Context) {
 }
 
 func isAdmin(ctx *Context) bool {
-	u, err := ctx.Bot.GetUserInfo(ctx.Ev.Username)
+	u, err := ctx.Bot.GetUserInfo(ctx.Ev.User)
 	if err != nil {
+		log.Printf("isAdmin: %v", err.Error())
 		return false
 	}
-	return u.IsAdmin
+	return (u.IsAdmin || u.IsOwner)
 }
 
 // Helpers
+
+// TODO: Maybe make this a method?
+func renderTemplate(tmpl *template.Template, g map[string]interface{}, ctx *Context) {
+	buf := bytes.NewBufferString("")
+	tmpl.Execute(buf, g)
+	ctx.Respond(buf.String())
+}
 
 func report(name, psn, info string, ctx *Context) {
 	char, err := Census.GetCharacterByName(name)
@@ -115,6 +214,9 @@ func report(name, psn, info string, ctx *Context) {
 			ctx.Respond("The given character name matches on US and EU")
 		}
 	}
-	db.NewReport(ctx.Ev.Name, char.Name.First, psn, info, char.Parent)
+	if err := db.NewReport(ctx.Ev.Name, char.Name.First, psn, info, char.Parent); err != nil {
+		ctx.Respond("An internal error has occured: " + err.Error())
+		return
+	}
 	ctx.Respond("Thank you for your report")
 }

@@ -1,3 +1,4 @@
+Search for: {{.Search}}
 {{range .Reports}}
-{{if .Cleared}}Resolved :white_check_mark:{{end}}Name: `{{.Name}}` For: `{{.AdditionalInfo}}`  
+{{if .Cleared}}:white_check_mark:{{else}}:red_circle:{{end}} ID: {{.ID}} Name: `{{.Name}}` For: `{{.AdditionalInfo}}`  
 {{end}}
