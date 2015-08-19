@@ -60,7 +60,7 @@ func cmdAllReports(ctx *Context) {
 	g := map[string]interface{}{}
 	g["Reports"] = reports
 	g["Search"] = "cleared = 0"
-	renderTemplate(searchTmpl, g, ctx)
+	ctx.RenderTemplate(searchTmpl, eg)
 }
 
 func cmdReport(ctx *Context) {
@@ -156,7 +156,7 @@ func cmdSearchReportsPSN(ctx *Context) {
 	db.DB.Where("psn_name LIKE ?", "%"+search+"%").Find(&reports)
 	g["Reports"] = reports
 
-	renderTemplate(searchTmpl, g, ctx)
+	ctx.RenderTemplate(searchTmpl, g)
 }
 
 func cmdSearchReportsOutfit(ctx *Context) {
@@ -179,7 +179,7 @@ func cmdSearchReportsOutfit(ctx *Context) {
 	db.DB.Where("outfit_cid = ?", outfit.ID).Find(&reports)
 	g["Reports"] = reports
 	g["Search"] = search
-	renderTemplate(searchTmpl, g, ctx)
+	ctx.RenderTemplate(searchTmpl, g)
 }
 
 func cmdSearchReports(ctx *Context) {
@@ -193,7 +193,7 @@ func cmdSearchReports(ctx *Context) {
 	g["Search"] = search
 	g["Reports"] = reports
 
-	renderTemplate(searchTmpl, g, ctx)
+	ctx.RenderTemplate(searchTmpl, g)
 }
 
 func cmdMyReports(ctx *Context) {
@@ -205,7 +205,7 @@ func cmdMyReports(ctx *Context) {
 
 	g["Reports"] = reports
 
-	renderTemplate(searchTmpl, g, ctx)
+	ctx.RenderTemplate(searchTmpl, g)
 
 }
 
@@ -227,13 +227,6 @@ func isAdmin(ctx *Context) bool {
 }
 
 // Helpers
-
-// TODO: Maybe make this a method?
-func renderTemplate(tmpl *template.Template, g map[string]interface{}, ctx *Context) {
-	buf := bytes.NewBufferString("")
-	tmpl.Execute(buf, g)
-	ctx.Respond(buf.String())
-}
 
 func report(name, psn, info string, ctx *Context) {
 	var char *census.Character

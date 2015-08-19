@@ -27,6 +27,43 @@ import (
 	"log"
 )
 
+// LookupWith looks for a character given a several paramaters
+//
+// @TODO: Just cleaned up a bit.  Anything else we can do?
+func LookupWith(c *census.Census, fallbackc *census.Census, ctx *Context) {
+	args := strings.Split(ctx.Ev.Text, " ")
+	if len(args) <= 1 {
+		ctx.Respond("Do you really expect me to lookup nothing?")
+		return
+	}
+
+	var response string
+	var err error
+
+	name := args[1]
+
+	response, err = lookupStatsChar(c, name)
+	if err != nil {
+		resp, err := lookupStatsChar(fallbackc, name)
+		if err != nil {
+			response = "The character wasn't found."
+		}
+		response = resp
+	}
+	ctx.Respond(response)
+}
+func lookupStatsChar(c *census.Census, name string) (string, error) {
+	char, err := c.GetCharacterByName(name)
+	if err != nil {
+		return "", err
+	}
+	buf := bytes.NewBufferString("")
+	if err := lookupTmpl.Execute(buf, Global{Character: char, Dev: Dev}); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
 func getUsername(bot *slack.Client, uid string) string {
 	u, err := bot.GetUserInfo(uid)
 	if err != nil {
@@ -34,4 +71,11 @@ func getUsername(bot *slack.Client, uid string) string {
 		return "Unknown user"
 	}
 	return u.Name
+}
+
+// parseURL gets the slack domain from your team given the URL to it
+func parseURL(url string) string {
+	url = strings.Split(url, "//")[1]
+	url = strings.Split(url, ".slack.com/")[0]
+	return url
 }

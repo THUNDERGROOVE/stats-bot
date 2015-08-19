@@ -69,24 +69,80 @@ I'm stats-bot.  I have serveral commands!\
 // TODO: Rip out after we convert over to all /commands
 // May not happen after all :(
 var Commands = make(map[string]*Cmd)
-var lookupTmpl *template.Template
 
-// Context is what's given to every command handler.  It should contain
-// everything a command will need
-type Context struct {
-	Bot *slack.Client
-	RTM *slack.RTM
-	Ev  *slack.MessageEvent
-}
-
-func (c *Context) Respond(s string) {
-	Respond(s, c.RTM, c.Ev)
-}
-
-// Global is the struct given to any template parsed for responses
+// Global is the struct given to the lookup template for responses
 type Global struct {
 	*census.Character
 	Dev bool
+}
+
+var lookupTmpl *template.Template
+
+// Cmd is a command handler struct
+type Cmd struct {
+	name       string
+	handler    func(*Context)
+	adminCheck bool
+}
+
+// RegisterCommand registers a command for the bot to dispatch
+func RegisterCommand(name string, handler func(*Context), state cmdType) {
+	cmd := new(Cmd)
+	cmd.name = name
+	switch state {
+	case CMD_DEV:
+		if !Dev {
+			cmd.handler = notReadyYet
+		} else {
+			cmd.handler = handler
+		}
+	case CMD_READY:
+		cmd.handler = handler
+	case CMD_ADMIN:
+		cmd.adminCheck = true
+		cmd.handler = handler
+
+	}
+	Commands[name] = cmd
+}
+
+// Dispatch sends a message to the bot
+func Dispatch(ctx *Context) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Recovered from panic in dispatch")
+			ctx.Respond("Something in that command scared me :( could almost say I was paniced")
+			debug.PrintStack()
+		}
+	}()
+
+	c := strings.ToLower(strings.Split(ctx.Ev.Text, " ")[0])
+	if len(ctx.Ev.Text) == 0 {
+		log.Printf("Got blank message")
+		return
+	}
+	if ctx.Ev.Text[0] == '!' {
+		if v, ok := Commands[strings.TrimLeft(c, "!")]; ok {
+			if !v.adminCheck || isAdmin(ctx) {
+				v.handler(ctx)
+			} else {
+				ctx.Respond("You do not have permission to do that.  Sorry :(")
+			}
+		} else {
+			ctx.Respond("I don't know what you want from me :( do !help?")
+		}
+	}
+}
+
+// Respond is a helper function to send text responses to the slack server.
+func Respond(s string, rtm *slack.RTM, ev *slack.MessageEvent) {
+	//lines := strings.Split(s, "\\")
+	text := strings.Replace(s, "\\", "\n", -1)
+	if rtm == nil {
+		log.Printf("RTM nil?")
+	}
+	out := rtm.NewOutgoingMessage(text, ev.Channel)
+	rtm.SendMessage(out)
 }
 
 func init() {
@@ -137,137 +193,4 @@ func cmdPop(ctx *Context) {
 	} else {
 		ctx.Respond("I don't know about that server.  I'm sorry :(")
 	}
-}
-
-func lookupStatsChar(c *census.Census, name string) (string, error) {
-	char, err := c.GetCharacterByName(name)
-	if err != nil {
-		return "", err
-	}
-	buf := bytes.NewBufferString("")
-	if err := lookupTmpl.Execute(buf, Global{Character: char, Dev: Dev}); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
-}
-
-// LookupWith looks for a character given a several paramaters
-//
-// @TODO: Just cleaned up a bit.  Anything else we can do?
-func LookupWith(c *census.Census, fallbackc *census.Census, ctx *Context) {
-	args := strings.Split(ctx.Ev.Text, " ")
-	if len(args) <= 1 {
-		ctx.Respond("Do you really expect me to lookup nothing?")
-		return
-	}
-
-	var response string
-	var err error
-
-	name := args[1]
-
-	response, err = lookupStatsChar(c, name)
-	if err != nil {
-		resp, err := lookupStatsChar(fallbackc, name)
-		if err != nil {
-			response = "The character wasn't found."
-		}
-		response = resp
-	}
-	ctx.Respond(response)
-}
-
-// Cmd is a command handler struct
-type Cmd struct {
-	name       string
-	handler    func(*Context)
-	adminCheck bool
-}
-
-// RegisterCommand registers a command for the bot to dispatch
-func RegisterCommand(name string, handler func(*Context), state cmdType) {
-	cmd := new(Cmd)
-	cmd.name = name
-	switch state {
-	case CMD_DEV:
-		if !Dev {
-			cmd.handler = notReadyYet
-		} else {
-			cmd.handler = handler
-		}
-	case CMD_READY:
-		cmd.handler = handler
-	case CMD_ADMIN:
-		cmd.adminCheck = true
-		cmd.handler = handler
-
-	}
-	Commands[name] = cmd
-}
-
-func notReadyYet(ctx *Context) {
-	ctx.Respond("That command isn't ready yet")
-}
-
-// Dispatch sends a message to the bot
-func Dispatch(ctx *Context) {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Printf("Recovered from panic in dispatch")
-			ctx.Respond("Something in that command scared me :( could almost say I was paniced")
-			debug.PrintStack()
-		}
-	}()
-
-	c := strings.ToLower(strings.Split(ctx.Ev.Text, " ")[0])
-	if len(ctx.Ev.Text) == 0 {
-		log.Printf("Got blank message")
-		return
-	}
-	if ctx.Ev.Text[0] == '!' {
-		if v, ok := Commands[strings.TrimLeft(c, "!")]; ok {
-			if !v.adminCheck || isAdmin(ctx) {
-				v.handler(ctx)
-			} else {
-				ctx.Respond("You do not have permission to do that.  Sorry :(")
-			}
-		} else {
-			ctx.Respond("I don't know what you want from me :( do !help?")
-		}
-	}
-}
-
-// Respond is a helper function to send text responses to the slack server.
-func Respond(s string, rtm *slack.RTM, ev *slack.MessageEvent) {
-	//lines := strings.Split(s, "\\")
-	text := strings.Replace(s, "\\", "\n", -1)
-	if rtm == nil {
-		log.Printf("RTM nil?")
-	}
-	out := rtm.NewOutgoingMessage(text, ev.Channel)
-	rtm.SendMessage(out)
-}
-
-func parseURL(url string) string {
-	url = strings.Split(url, "//")[1]
-	url = strings.Split(url, ".slack.com/")[0]
-	return url
-}
-
-// No longer used?
-func TKPercent(char *census.Character) float64 {
-	kills := char.TeamKillsInLast(150)
-	return (float64(kills) / 1000) * 100
-}
-
-func parseTemplate(filename string) *template.Template {
-	// Default directory if we're in a Docker environment
-	lookupName := filepath.Join("/assets", filename)
-
-	// Sometimes it might just be in the current working directory
-	if _, err := os.Stat(lookupName); err != nil {
-		lookupName = filename
-	}
-
-	return template.Must(template.ParseFiles(lookupName))
 }
