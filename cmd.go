@@ -74,13 +74,13 @@ var lookupTmpl *template.Template
 // Context is what's given to every command handler.  It should contain
 // everything a command will need
 type Context struct {
-	Bot *slack.Slack
-	Out chan slack.OutgoingMessage
+	Bot *slack.Client
+	RTM *slack.RTM
 	Ev  *slack.MessageEvent
 }
 
 func (c *Context) Respond(s string) {
-	Respond(s, c.Out, c.Ev)
+	Respond(s, c.RTM, c.Ev)
 }
 
 // Global is the struct given to any template parsed for responses
@@ -219,9 +219,6 @@ func Dispatch(ctx *Context) {
 		}
 	}()
 
-	if ctx.Bot.GetInfo().User.Name == ctx.Ev.User {
-		return
-	}
 	c := strings.ToLower(strings.Split(ctx.Ev.Text, " ")[0])
 	if len(ctx.Ev.Text) == 0 {
 		log.Printf("Got blank message")
@@ -241,15 +238,14 @@ func Dispatch(ctx *Context) {
 }
 
 // Respond is a helper function to send text responses to the slack server.
-func Respond(s string, out chan slack.OutgoingMessage, ev *slack.MessageEvent) {
+func Respond(s string, rtm *slack.RTM, ev *slack.MessageEvent) {
 	//lines := strings.Split(s, "\\")
 	text := strings.Replace(s, "\\", "\n", -1)
-	o := slack.OutgoingMessage{}
-	o.Text = text
-	o.Channel = ev.Channel
-	o.Type = ev.Type
-	out <- o
-
+	if rtm == nil {
+		log.Printf("RTM nil?")
+	}
+	out := rtm.NewOutgoingMessage(text, ev.Channel)
+	rtm.SendMessage(out)
 }
 
 func parseURL(url string) string {

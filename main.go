@@ -27,13 +27,11 @@
 package main
 
 import (
-	"fmt"
 	"github.com/THUNDERGROOVE/census"
 	"github.com/nlopes/slack"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
-	"time"
 )
 
 var (
@@ -76,37 +74,14 @@ func StartBot() {
 
 	log.Printf("Auth: %v on team %v", t.User, t.Team)
 
-	api, err := bot.StartRTM("", fmt.Sprintf("http://%v:8080/", "http://localhost/"))
-	if err != nil {
-		log.Printf("Error setting up RTM [%v]", err.Error())
-	}
-
-	sender := make(chan slack.OutgoingMessage)
-	receiver := make(chan slack.SlackEvent)
-
-	go api.HandleIncomingEvents(receiver)
-	go api.Keepalive(20 * time.Second)
-
-	go sendMessages(api, sender)
-
+	rtm := bot.NewRTM()
+	go rtm.ManageConnection()
 	for {
 		select {
-		case msg := <-receiver:
+		case msg := <-rtm.IncomingEvents:
 			switch m := msg.Data.(type) {
 			case *slack.MessageEvent:
-				Dispatch(&Context{Bot: bot, Ev: m, Out: sender})
-			}
-		}
-	}
-
-}
-
-func sendMessages(api *slack.WS, sender chan slack.OutgoingMessage) {
-	for {
-		select {
-		case msg := <-sender:
-			if err := api.SendMessage(&msg); err != nil {
-				log.Printf("Error sending message: %v", err.Error())
+				Dispatch(&Context{Bot: bot, Ev: m, RTM: rtm})
 			}
 		}
 	}

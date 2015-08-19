@@ -27,7 +27,7 @@ import (
 	"log"
 )
 
-func getUsername(bot *slack.Slack, uid string) string {
+func getUsername(bot *slack.Client, uid string) string {
 	u, err := bot.GetUserInfo(uid)
 	if err != nil {
 		log.Printf("Error getting user info: %v", err.Error())

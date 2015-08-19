@@ -218,7 +218,7 @@ func cmdIsAdmin(ctx *Context) {
 }
 
 func isAdmin(ctx *Context) bool {
-	u, err := ctx.Bot.GetUserInfo(ctx.Ev.User)
+	u, err := ctx.RTM.GetUserInfo(ctx.Ev.User)
 	if err != nil {
 		log.Printf("isAdmin: %v", err.Error())
 		return false
