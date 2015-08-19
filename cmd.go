@@ -54,7 +54,7 @@ I'm stats-bot.  I have serveral commands!\
 !pop      <server>\
 
 !report <name> <additional info>
-!reportpsn <name> <psn> <additioanl info>
+!reportpsn <name> <psn> <additional info>
 
 !clearreport <id>
 !deletereport <id>

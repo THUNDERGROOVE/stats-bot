@@ -48,7 +48,19 @@ func init() {
 	RegisterCommand("searchreportpsn", cmdSearchReportsPSN, CMD_ADMIN)
 	RegisterCommand("searchreportoutfit", cmdSearchReportsOutfit, CMD_ADMIN)
 
+	RegisterCommand("allreports", cmdAllReports, CMD_ADMIN)
+	RegisterCommand("myreports", cmdMyReports, CMD_READY)
+
 	RegisterCommand("isadmin", cmdIsAdmin, CMD_READY)
+}
+
+func cmdAllReports(ctx *Context) {
+	reports := []*db.Report{}
+	db.DB.Where("cleared = 0").Find(&reports)
+	g := map[string]interface{}{}
+	g["Reports"] = reports
+	g["Search"] = "cleared = 0"
+	renderTemplate(searchTmpl, g, ctx)
 }
 
 func cmdReport(ctx *Context) {
@@ -93,7 +105,7 @@ func cmdClearReport(ctx *Context) {
 		return
 	}
 
-	if !isAdmin(ctx) || (r.Reporter == ctx.Ev.User) {
+	if !isAdmin(ctx) || !(r.Reporter == ctx.Ev.User) {
 		ctx.Respond("You do not have permission to do that")
 		return
 	}
@@ -124,7 +136,7 @@ func cmdDeleteReport(ctx *Context) {
 		ctx.Respond("That report doesn't exist")
 	}
 
-	if !isAdmin(ctx) || (r.Reporter == ctx.Ev.User) {
+	if !isAdmin(ctx) || !(r.Reporter == ctx.Ev.User) {
 		log.Printf("! %v == %v", r.Reporter, ctx.Ev.User)
 		ctx.Respond("You do not have permission to do that")
 		return
@@ -184,6 +196,19 @@ func cmdSearchReports(ctx *Context) {
 	renderTemplate(searchTmpl, g, ctx)
 }
 
+func cmdMyReports(ctx *Context) {
+
+	reports := []*db.Report{}
+	g := map[string]interface{}{}
+
+	db.DB.Where("reporter = ?", ctx.Ev.User).Find(&reports)
+
+	g["Reports"] = reports
+
+	renderTemplate(searchTmpl, g, ctx)
+
+}
+
 func cmdIsAdmin(ctx *Context) {
 	if isAdmin(ctx) {
 		ctx.Respond("You are an admin")
@@ -211,20 +236,43 @@ func renderTemplate(tmpl *template.Template, g map[string]interface{}, ctx *Cont
 }
 
 func report(name, psn, info string, ctx *Context) {
-	char, err := Census.GetCharacterByName(name)
+	var char *census.Character
+	var err error
+	if strings.Contains(name, ":") {
+		region := strings.Split(name, ":")[0]
+		name = strings.Split(name, ":")[1]
 
-	if err != nil {
-		err = nil
-		char, err = CensusEU.GetCharacterByName(name)
-		if err != nil {
-			ctx.Respond("That name didn't exist in either US or EU")
+		switch strings.ToLower(region) {
+		case "eu":
+			char, err = CensusEU.GetCharacterByName(name)
+		case "us":
+			char, err = Census.GetCharacterByName(name)
+		default:
+			ctx.Respond("Unknown region code")
 			return
 		}
 	} else {
-		_, err := CensusEU.GetCharacterByName(name)
-		if err == nil {
-			ctx.Respond("The given character name matches on US and EU")
+
+		char, err = Census.GetCharacterByName(name)
+
+		if err != nil {
+			err = nil
+			char, err = CensusEU.GetCharacterByName(name)
+			if err != nil {
+				ctx.Respond("That name didn't exist in either US or EU")
+				return
+			}
+		} else {
+			_, err := CensusEU.GetCharacterByName(name)
+			if err == nil {
+				ctx.Respond("The given character name matches on US and EU\nPlease specify with us:name or eu:name")
+				return
+			}
 		}
+	}
+	if char == nil {
+		ctx.Respond("That name didn't exist in either US or EU")
+		return
 	}
 	if err := db.NewReport(ctx.Ev.User, char.Name.First, psn, info, char.Parent); err != nil {
 		ctx.Respond("An internal error has occured: " + err.Error())
