@@ -38,15 +38,15 @@ var searchTmpl *template.Template
 func init() {
 	searchTmpl = parseTemplate("search.tmpl")
 
-	RegisterCommand("reportpsn", cmdReportPSN, CMD_DEV)
-	RegisterCommand("report", cmdReport, CMD_DEV)
+	RegisterCommand("reportpsn", cmdReportPSN, CMD_ADMIN)
+	RegisterCommand("report", cmdReport, CMD_ADMIN)
 
-	RegisterCommand("clearreport", cmdClearReport, CMD_DEV)
-	RegisterCommand("deletereport", cmdDeleteReport, CMD_DEV)
+	RegisterCommand("clearreport", cmdClearReport, CMD_ADMIN)
+	RegisterCommand("deletereport", cmdDeleteReport, CMD_ADMIN)
 
-	RegisterCommand("searchreport", cmdSearchReports, CMD_DEV)
-	RegisterCommand("searchreportpsn", cmdSearchReportsPSN, CMD_DEV)
-	RegisterCommand("searchreportoutfit", cmdSearchReportsOutfit, CMD_DEV)
+	RegisterCommand("searchreport", cmdSearchReports, CMD_ADMIN)
+	RegisterCommand("searchreportpsn", cmdSearchReportsPSN, CMD_ADMIN)
+	RegisterCommand("searchreportoutfit", cmdSearchReportsOutfit, CMD_ADMIN)
 
 	RegisterCommand("isadmin", cmdIsAdmin, CMD_READY)
 }
@@ -93,6 +93,11 @@ func cmdClearReport(ctx *Context) {
 		return
 	}
 
+	if !isAdmin(ctx) || !(r.Reporter == ctx.Ev.User) {
+		ctx.Respond("You do not have permission to do that")
+		return
+	}
+
 	r.ToggleClear()
 	if r.Cleared {
 		ctx.Respond("The issue was marked as resolved")
@@ -119,6 +124,11 @@ func cmdDeleteReport(ctx *Context) {
 		ctx.Respond("That report doesn't exist")
 	}
 
+	if !isAdmin(ctx) || !(r.Reporter == ctx.Ev.User) {
+		ctx.Respond("You do not have permission to do that")
+		return
+	}
+
 	db.DB.Delete(r)
 	ctx.Respond("That report was successfully deleted")
 }
@@ -135,6 +145,7 @@ func cmdSearchReportsPSN(ctx *Context) {
 
 	renderTemplate(searchTmpl, g, ctx)
 }
+
 func cmdSearchReportsOutfit(ctx *Context) {
 	args := strings.Split(ctx.Ev.Text, " ")
 	search := strings.Join(args[1:], " ")
@@ -214,7 +225,7 @@ func report(name, psn, info string, ctx *Context) {
 			ctx.Respond("The given character name matches on US and EU")
 		}
 	}
-	if err := db.NewReport(ctx.Ev.Name, char.Name.First, psn, info, char.Parent); err != nil {
+	if err := db.NewReport(ctx.Ev.User, char.Name.First, psn, info, char.Parent); err != nil {
 		ctx.Respond("An internal error has occured: " + err.Error())
 		return
 	}

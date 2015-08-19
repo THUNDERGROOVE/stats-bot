@@ -67,13 +67,13 @@ func PopResp(pop *census.PopulationSet, server string) string {
 
 			out += fmt.Sprintf(":vanu: %%%v | %v\\",
 				percPad(v.VSPercent()),
-				strings.Repeat("*", v.VSPercent()))
+				strings.Repeat("*", v.VSPercent()/2))
 			out += fmt.Sprintf(":tr: %%%v | %v\\",
 				percPad(v.TRPercent()),
-				strings.Repeat("*", v.TRPercent()))
+				strings.Repeat("*", v.TRPercent()/2))
 			out += fmt.Sprintf(":nc: %%%v | %v \\",
 				percPad(v.NCPercent()),
-				strings.Repeat("*", v.NCPercent()))
+				strings.Repeat("*", v.NCPercent()/2))
 			return out
 		}
 	}

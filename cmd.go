@@ -51,7 +51,20 @@ const helpText = `Hi.\
 I'm stats-bot.  I have serveral commands!\
 !lookup   <name>\
 !lookupeu <name>\
-!pop      <server>\`
+!pop      <server>\
+
+!report <name> <additional info>
+!reportpsn <name> <psn> <additioanl info>
+
+!clearreport <id>
+!deletereport <id>
+
+!searchreport <name>
+!searchreportpsn <psn name>
+!searchreportoutfit <outfit name>
+
+!isadmin
+`
 
 // TODO: Rip out after we convert over to all /commands
 // May not happen after all :(
@@ -201,6 +214,7 @@ func Dispatch(ctx *Context) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("Recovered from panic in dispatch")
+			ctx.Respond("Something in that command scared me :( could almost say I was paniced")
 			debug.PrintStack()
 		}
 	}()
