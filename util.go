@@ -23,8 +23,11 @@
 package main
 
 import (
+	"bytes"
+	"github.com/THUNDERGROOVE/census"
 	"github.com/nlopes/slack"
 	"log"
+	"strings"
 )
 
 // LookupWith looks for a character given a several paramaters

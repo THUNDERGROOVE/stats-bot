@@ -27,13 +27,10 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/THUNDERGROOVE/census"
 	"github.com/nlopes/slack"
 	"log"
-	"os"
-	"path/filepath"
 	"runtime/debug"
 	"strings"
 	"text/template"

@@ -23,7 +23,6 @@
 package main
 
 import (
-	"bytes"
 	"log"
 	"strconv"
 	"strings"
@@ -60,7 +59,7 @@ func cmdAllReports(ctx *Context) {
 	g := map[string]interface{}{}
 	g["Reports"] = reports
 	g["Search"] = "cleared = 0"
-	ctx.RenderTemplate(searchTmpl, eg)
+	ctx.RenderTemplate(searchTmpl, g)
 }
 
 func cmdReport(ctx *Context) {

@@ -26,6 +26,7 @@ import (
 	"testing"
 )
 
+// TODO: Figure out how to test things that use the Slack API to pull data
 func TestisAdmin(t *testing.T) {
 	t.Log("fakepass: until I can figure out how to properly test this")
 }

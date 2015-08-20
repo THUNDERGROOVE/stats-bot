@@ -22,6 +22,15 @@
 
 package main
 
+import (
+	"bytes"
+	"os"
+	"path/filepath"
+	"text/template"
+
+	"github.com/nlopes/slack"
+)
+
 // Context is what's given to every command handler.  It should contain
 // everything a command will need
 type Context struct {
