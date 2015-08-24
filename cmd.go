@@ -29,6 +29,7 @@ package main
 import (
 	"fmt"
 	"github.com/THUNDERGROOVE/census"
+	"github.com/THUNDERGROOVE/stats-bot/db"
 	"github.com/nlopes/slack"
 	"log"
 	"runtime/debug"
@@ -70,7 +71,10 @@ var Commands = make(map[string]*Cmd)
 // Global is the struct given to the lookup template for responses
 type Global struct {
 	*census.Character
-	Dev bool
+	Dev           bool
+	Reports       []db.Report
+	TimesReported int
+	TimesCleared  int
 }
 
 var lookupTmpl *template.Template
@@ -159,8 +163,12 @@ func init() {
 	RegisterCommand("pop", cmdPop, CMD_READY)
 
 	RegisterCommand("version", cmdVersion, CMD_READY)
+	RegisterCommand("about", cmdAbout, CMD_READY)
 }
 
+func cmdAbout(ctx *Context) {
+	ctx.Respond("http://vsu.ctrl-c.io")
+}
 func cmdHelp(ctx *Context) {
 	ctx.Respond(helpText)
 }

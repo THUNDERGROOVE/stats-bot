@@ -137,7 +137,7 @@ loop:
 		case event := <-events.Events:
 			switch event.Payload.EventName {
 			case "PlayerLogin":
-				ch, err := c.GetCharacterByID(event.Payload.CharacterID)
+				ch, err := c.GetCharacterByIDRes(event.Payload.CharacterID, "faction")
 				if err != nil {
 					if err == census.ErrCharDoesNotExist {
 						continue
@@ -149,7 +149,7 @@ loop:
 				server := c.GetServerByID(event.Payload.WorldID)
 				pop.PlayerLogin(server.Name.En, ch.FactionID)
 			case "PlayerLogout":
-				ch, err := c.GetCharacterByID(event.Payload.CharacterID)
+				ch, err := c.GetCharacterByIDRes(event.Payload.CharacterID, "faction")
 				if err != nil {
 					fmt.Printf("ERROR: Failed to get character from ID: '%v' [%v]\n",
 						event.Payload.CharacterID, err.Error())

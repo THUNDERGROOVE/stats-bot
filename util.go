@@ -25,6 +25,7 @@ package main
 import (
 	"bytes"
 	"github.com/THUNDERGROOVE/census"
+	"github.com/THUNDERGROOVE/stats-bot/db"
 	"github.com/nlopes/slack"
 	"log"
 	"strings"
@@ -32,7 +33,7 @@ import (
 
 // LookupWith looks for a character given a several paramaters
 //
-// @TODO: Just cleaned up a bit.  Anything else we can do?
+// TODO: Just cleaned up a bit.  Anything else we can do?
 func LookupWith(c *census.Census, fallbackc *census.Census, ctx *Context) {
 	args := strings.Split(ctx.Ev.Text, " ")
 	if len(args) <= 1 {
@@ -61,7 +62,26 @@ func lookupStatsChar(c *census.Census, name string) (string, error) {
 		return "", err
 	}
 	buf := bytes.NewBufferString("")
-	if err := lookupTmpl.Execute(buf, Global{Character: char, Dev: Dev}); err != nil {
+
+	// This is ugly and terrible and idc
+	var cleared int
+	var reported int
+	reports := []db.Report{}
+	db.DB.Where("name = ?", char.Name.First).Find(&reports)
+	for _, v := range reports {
+		if v.Cleared {
+			cleared += 1
+		} else {
+			reported += 1
+		}
+	}
+
+	if err := lookupTmpl.Execute(buf, Global{
+		Character:     char,
+		Dev:           Dev,
+		TimesReported: reported,
+		TimesCleared:  cleared,
+		Reports:       reports}); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
